@@ -33,7 +33,7 @@ export function LandingHero() {
                 size="lg"
                 className="rounded-[8px] px-8 py-6 text-base font-medium hover:scale-105 transition-transform"
               >
-                ASSINE AGORA – R$ 47,90 / ano
+                ASSINE AGORA
               </Button>
             </Link>
             <Link href="#benefits">

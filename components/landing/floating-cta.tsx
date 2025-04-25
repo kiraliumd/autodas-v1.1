@@ -37,9 +37,7 @@ export function FloatingCTA() {
           </div>
         </div>
         <Link href="/checkout">
-          <Button className="whitespace-nowrap rounded-[8px] hover:scale-105 transition-transform">
-            ASSINAR AGORA – R$ 47,90
-          </Button>
+          <Button className="whitespace-nowrap rounded-[8px] hover:scale-105 transition-transform">ASSINE AGORA</Button>
         </Link>
       </div>
     </div>

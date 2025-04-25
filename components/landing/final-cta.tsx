@@ -15,7 +15,7 @@ export function FinalCTA() {
                 size="lg"
                 className="text-base font-medium px-8 py-6 rounded-[8px] hover:scale-105 transition-transform"
               >
-                ASSINE AGORA – R$ 47,90 / ANO
+                ASSINE AGORA
               </Button>
             </Link>
           </div>
