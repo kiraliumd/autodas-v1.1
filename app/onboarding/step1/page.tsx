@@ -1,0 +1,196 @@
+"use client"
+
+import type React from "react"
+
+import { useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { OnboardingLayout } from "@/components/onboarding-layout"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { AlertCircle } from "lucide-react"
+import { formatCNPJ, cleanFormat, validateCNPJ } from "@/lib/utils/format"
+
+export default function OnboardingStep1() {
+  const [formData, setFormData] = useState({
+    fullName: "",
+    cnpj: "",
+  })
+  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [isVerifying, setIsVerifying] = useState(true)
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const sessionId = searchParams.get("session_id")
+
+  useEffect(() => {
+    const verifyPayment = async () => {
+      if (!sessionId) {
+        setError("Sessão de pagamento não encontrada. Por favor, realize o pagamento primeiro.")
+        setIsVerifying(false)
+        return
+      }
+
+      try {
+        // Verificar o pagamento usando a API
+        const response = await fetch("/api/verify-payment", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ sessionId }),
+        })
+
+        const data = await response.json()
+
+        if (!data.success) {
+          setError("Pagamento não confirmado. Por favor, realize o pagamento primeiro.")
+          setTimeout(() => {
+            router.push("/checkout")
+          }, 3000)
+          return
+        }
+
+        // Armazenar o ID da sessão no localStorage para uso posterior
+        localStorage.setItem("stripe_session_id", sessionId)
+        setIsVerifying(false)
+      } catch (err) {
+        console.error("Erro ao verificar pagamento:", err)
+        setError("Erro ao verificar pagamento. Por favor, tente novamente.")
+        setIsVerifying(false)
+      }
+    }
+
+    if (sessionId) {
+      verifyPayment()
+    } else {
+      setIsVerifying(false)
+    }
+  }, [sessionId, router])
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+
+    if (name === "cnpj") {
+      setFormData((prev) => ({ ...prev, [name]: formatCNPJ(value) }))
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }))
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      // Validar dados
+      if (!formData.fullName.trim() || !formData.cnpj.trim()) {
+        setError("Por favor, preencha todos os campos.")
+        setIsLoading(false)
+        return
+      }
+
+      // Validar CNPJ
+      const cleanedCNPJ = cleanFormat(formData.cnpj)
+      if (!validateCNPJ(cleanedCNPJ)) {
+        setError("CNPJ inválido. Por favor, verifique e tente novamente.")
+        setIsLoading(false)
+        return
+      }
+
+      // Armazenar dados no localStorage para usar nas próximas etapas
+      localStorage.setItem(
+        "onboarding_step1",
+        JSON.stringify({
+          fullName: formData.fullName,
+          cnpj: cleanFormat(formData.cnpj),
+        }),
+      )
+
+      // Avançar para a próxima etapa
+      router.push("/onboarding/step2")
+    } catch (err) {
+      setError("Ocorreu um erro. Por favor, tente novamente.")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  if (isVerifying && sessionId) {
+    return (
+      <OnboardingLayout currentStep={1} totalSteps={3}>
+        <Card className="border-none shadow-lg">
+          <CardHeader>
+            <CardTitle>Verificando pagamento</CardTitle>
+            <CardDescription>Por favor, aguarde enquanto verificamos seu pagamento...</CardDescription>
+          </CardHeader>
+          <CardContent className="flex justify-center py-6">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          </CardContent>
+        </Card>
+      </OnboardingLayout>
+    )
+  }
+
+  // Se não houver sessionId e não estiver verificando, redirecionar para checkout
+  if (!sessionId && !isVerifying) {
+    router.push("/checkout")
+    return null
+  }
+
+  return (
+    <OnboardingLayout currentStep={1} totalSteps={3}>
+      <Card className="border-none shadow-lg">
+        <CardHeader>
+          <CardTitle>Dados pessoais</CardTitle>
+          <CardDescription>Informe seus dados pessoais para configurar sua conta</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          <form id="step1-form" onSubmit={handleSubmit}>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="fullName">Nome completo</Label>
+                <Input
+                  id="fullName"
+                  name="fullName"
+                  value={formData.fullName}
+                  onChange={handleChange}
+                  placeholder="Digite seu nome completo"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="cnpj">CNPJ do MEI</Label>
+                <Input
+                  id="cnpj"
+                  name="cnpj"
+                  value={formData.cnpj}
+                  onChange={handleChange}
+                  placeholder="00.000.000/0000-00"
+                  required
+                />
+                <p className="text-sm text-muted-foreground">Digite o CNPJ no formato XX.XXX.XXX/XXXX-XX</p>
+              </div>
+            </div>
+          </form>
+        </CardContent>
+        <CardFooter className="flex justify-end">
+          <Button type="submit" form="step1-form" disabled={isLoading}>
+            {isLoading ? "Processando..." : "Continuar"}
+          </Button>
+        </CardFooter>
+      </Card>
+    </OnboardingLayout>
+  )
+}
