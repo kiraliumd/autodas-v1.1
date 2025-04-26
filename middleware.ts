@@ -1,8 +1,18 @@
 import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
+import { securityMiddleware } from "./middleware-security"
 
 export async function middleware(req: NextRequest) {
+  // Aplicar middleware de segurança primeiro
+  const securityResponse = await securityMiddleware(req)
+
+  // Se o middleware de segurança retornar uma resposta diferente de next(),
+  // significa que houve um problema de segurança, então retornamos essa resposta
+  if (securityResponse.status !== 200) {
+    return securityResponse
+  }
+
   const res = NextResponse.next()
   const supabase = createMiddlewareClient({ req, res })
 
@@ -43,5 +53,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/onboarding/:path*", "/login"],
+  matcher: ["/dashboard/:path*", "/onboarding/:path*", "/login", "/api/:path*"],
 }

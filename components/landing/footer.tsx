@@ -36,17 +36,17 @@ export function Footer() {
             <h3 className="text-sm font-semibold text-gray-900 tracking-wider uppercase mb-4">Suporte</h3>
             <ul className="space-y-3">
               <li>
-                <Link href="#" className="text-sm hover:text-primary transition-colors">
+                <Link href="/central-de-ajuda" className="text-sm hover:text-primary transition-colors">
                   Central de Ajuda
                 </Link>
               </li>
               <li>
-                <Link href="#" className="text-sm hover:text-primary transition-colors">
+                <Link href="/politica-de-privacidade" className="text-sm hover:text-primary transition-colors">
                   Política de Privacidade
                 </Link>
               </li>
               <li>
-                <Link href="#" className="text-sm hover:text-primary transition-colors">
+                <Link href="/termos-de-uso" className="text-sm hover:text-primary transition-colors">
                   Termos de Uso
                 </Link>
               </li>

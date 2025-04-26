@@ -12,6 +12,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 import Link from "next/link"
+import { CSRFToken } from "@/components/security/csrf-token"
+import { useCSRF } from "@/hooks/use-csrf"
+import { validateData, loginFormSchema, sanitizeString } from "@/lib/utils/validation"
 
 export function LoginForm() {
   const [email, setEmail] = useState("")
@@ -20,6 +23,7 @@ export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false)
   const { signIn } = useAuth()
   const router = useRouter()
+  const { csrfToken } = useCSRF()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -27,7 +31,19 @@ export function LoginForm() {
     setError(null)
 
     try {
-      const { error } = await signIn(email, password)
+      // Validar dados do formulário
+      const validation = validateData(loginFormSchema, { email, password })
+
+      if (!validation.success) {
+        setError(validation.error || "Dados inválidos. Por favor, verifique e tente novamente.")
+        setIsLoading(false)
+        return
+      }
+
+      // Sanitizar dados
+      const sanitizedEmail = sanitizeString(email)
+
+      const { error } = await signIn(sanitizedEmail, password)
 
       if (error) {
         setError("Email ou senha inválidos. Por favor, tente novamente.")
@@ -49,6 +65,8 @@ export function LoginForm() {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <CSRFToken />
+
           {error && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />

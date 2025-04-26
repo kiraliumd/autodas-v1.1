@@ -2,14 +2,31 @@ import { NextResponse } from "next/server"
 import Stripe from "stripe"
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
 import { cookies } from "next/headers"
+import { z } from "zod"
+import { sanitizeObject, validateData } from "@/lib/utils/validation"
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2023-10-16",
 })
 
+// Esquema de validação para a requisição
+const checkoutSessionSchema = z.object({
+  price: z.number().min(1, "Preço deve ser maior que zero"),
+  successUrl: z.string().url("URL de sucesso inválida"),
+  cancelUrl: z.string().url("URL de cancelamento inválida"),
+})
+
 export async function POST(req: Request) {
   try {
-    const { price, successUrl, cancelUrl } = await req.json()
+    // Validar e sanitizar os dados da requisição
+    const body = await req.json()
+    const validation = validateData(checkoutSessionSchema, body)
+
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 })
+    }
+
+    const { price, successUrl, cancelUrl } = sanitizeObject(validation.data)
     console.log("Criando sessão de checkout para preço:", price)
 
     // Criar uma sessão de checkout

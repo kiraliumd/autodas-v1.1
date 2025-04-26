@@ -16,6 +16,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 })
     }
 
+    // Verificar se o usuário é um administrador (implementar em produção)
+    // const { data: userRole } = await supabase.from("user_roles").select("role").eq("user_id", session.user.id).single()
+    // if (!userRole || userRole.role !== "admin") {
+    //   return NextResponse.json({ success: false, error: "Acesso negado" }, { status: 403 })
+    // }
+
     // Obter a data atual
     const now = new Date().toISOString()
 

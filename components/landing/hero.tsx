@@ -1,18 +1,11 @@
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import Link from "next/link"
-import { Clock } from "lucide-react"
 
 export function LandingHero() {
   return (
     <section className="relative py-16 bg-[#FFF8EE]">
       <div className="container mx-auto max-w-[1120px]">
-        {/* Banner de urgência */}
-        <div className="bg-amber-100 border border-amber-300 rounded-lg p-3 mb-8 max-w-3xl mx-auto flex items-center justify-center gap-2 text-amber-800 animate-pulse-slow">
-          <Clock className="h-4 w-4" />
-          <p className="text-sm font-medium">Oferta por tempo limitado! Preço promocional por apenas 7 dias.</p>
-        </div>
-
         <div className="text-center max-w-3xl mx-auto mb-12">
           <div className="inline-block bg-primary/20 text-primary px-4 py-1 rounded-[8px] text-sm font-medium mb-6 animate-fade-in">
             SIMPLIFIQUE SUA VIDA COMO MEI

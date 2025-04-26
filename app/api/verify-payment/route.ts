@@ -3,19 +3,30 @@ import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 import Stripe from "stripe"
 import { calculateExpirationDate, DEFAULT_SESSION_EXPIRATION_DAYS, isExpired } from "@/lib/payment-verification"
+import { z } from "zod"
+import { sanitizeObject, validateData } from "@/lib/utils/validation"
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2023-10-16",
 })
 
+// Esquema de validação para a requisição
+const verifyPaymentSchema = z.object({
+  sessionId: z.string().min(1, "ID da sessão é obrigatório").max(255),
+})
+
 export async function POST(req: Request) {
   try {
-    const { sessionId } = await req.json()
-    console.log(`Verificando pagamento para sessão: ${sessionId}`)
+    // Validar e sanitizar os dados da requisição
+    const body = await req.json()
+    const validation = validateData(verifyPaymentSchema, body)
 
-    if (!sessionId) {
-      return NextResponse.json({ success: false, error: "Session ID is required" }, { status: 400 })
+    if (!validation.success) {
+      return NextResponse.json({ success: false, error: validation.error }, { status: 400 })
     }
+
+    const { sessionId } = sanitizeObject(validation.data)
+    console.log(`Verificando pagamento para sessão: ${sessionId}`)
 
     // Verificar no banco de dados primeiro
     const cookieStore = cookies()
@@ -81,12 +92,15 @@ export async function POST(req: Request) {
       // Calcular data de expiração
       const expiresAt = calculateExpirationDate(new Date(), DEFAULT_SESSION_EXPIRATION_DAYS)
 
+      // Sanitizar os metadados antes de salvar
+      const sanitizedMetadata = sanitizeObject(session.metadata || {})
+
       // Salvar a sessão no banco de dados se não existir
       if (!existingSession) {
         console.log(`Salvando sessão ${sessionId} no banco de dados`)
         const { error: insertError } = await supabase.from("stripe_sessions").insert({
           session_id: sessionId,
-          metadata: (session.metadata as any) || {},
+          metadata: sanitizedMetadata,
           status: "completed",
           customer_email: session.customer_details?.email || null,
           expires_at: expiresAt,

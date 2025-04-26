@@ -13,6 +13,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 import Link from "next/link"
 import { formatWhatsApp, formatCNPJ, cleanFormat, validateCNPJ } from "@/lib/utils/format"
+import { CSRFToken } from "@/components/security/csrf-token"
+import { validateData, registerFormSchema, sanitizeObject } from "@/lib/utils/validation"
 
 export function RegisterForm() {
   const [formData, setFormData] = useState({
@@ -45,20 +47,38 @@ export function RegisterForm() {
     setIsLoading(true)
     setError(null)
 
-    // Validar CNPJ
-    const cleanedCNPJ = cleanFormat(formData.cnpj)
-    if (!validateCNPJ(cleanedCNPJ)) {
-      setError("CNPJ inválido. Por favor, verifique e tente novamente.")
-      setIsLoading(false)
-      return
-    }
-
     try {
-      const { error } = await signUp(formData.email, formData.password, {
-        full_name: formData.fullName,
+      // Validar dados do formulário
+      const validation = validateData(registerFormSchema, formData)
+
+      if (!validation.success) {
+        setError(validation.error || "Dados inválidos. Por favor, verifique e tente novamente.")
+        setIsLoading(false)
+        return
+      }
+
+      // Validar CNPJ
+      const cleanedCNPJ = cleanFormat(formData.cnpj)
+      if (!validateCNPJ(cleanedCNPJ)) {
+        setError("CNPJ inválido. Por favor, verifique e tente novamente.")
+        setIsLoading(false)
+        return
+      }
+
+      // Sanitizar dados
+      const sanitizedData = sanitizeObject({
+        fullName: formData.fullName,
+        email: formData.email,
         cnpj: cleanFormat(formData.cnpj),
         whatsapp: cleanFormat(formData.whatsapp),
-        security_code: formData.securityCode,
+        securityCode: formData.securityCode,
+      })
+
+      const { error } = await signUp(sanitizedData.email, formData.password, {
+        full_name: sanitizedData.fullName,
+        cnpj: sanitizedData.cnpj,
+        whatsapp: sanitizedData.whatsapp,
+        security_code: sanitizedData.securityCode,
       })
 
       if (error) {
@@ -81,6 +101,8 @@ export function RegisterForm() {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <CSRFToken />
+
           {error && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />

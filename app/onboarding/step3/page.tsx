@@ -31,7 +31,7 @@ export default function OnboardingStep3() {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
-  const [debugInfo, setDebugInfo] = useState<string | null>(null)
+  // Estado de debug removido, usando apenas console.log
   const router = useRouter()
   const supabase = getSupabaseClient()
 
@@ -75,7 +75,6 @@ export default function OnboardingStep3() {
 
     setIsLoading(true)
     setError(null)
-    setDebugInfo(null)
 
     try {
       let paymentVerified = false
@@ -91,14 +90,14 @@ export default function OnboardingStep3() {
 
           if (verificationResult.success && verificationResult.verified) {
             paymentVerified = true
-            setDebugInfo("Pagamento verificado com sucesso")
+            console.log("Pagamento verificado com sucesso")
           } else {
-            setDebugInfo(`Erro na verificação: ${verificationResult.error}`)
+            console.log(`Erro na verificação: ${verificationResult.error}`)
             throw new Error(verificationResult.error || "Erro ao verificar pagamento")
           }
         } catch (verifyError) {
           console.error("Erro ao verificar pagamento:", verifyError)
-          setDebugInfo(
+          console.log(
             `Erro ao verificar pagamento: ${verifyError instanceof Error ? verifyError.message : String(verifyError)}`,
           )
           // Continuar mesmo com erro para fins de desenvolvimento
@@ -107,7 +106,7 @@ export default function OnboardingStep3() {
       } else {
         // Para desenvolvimento, permitir continuar mesmo sem ID de sessão
         console.warn("Nenhum ID de sessão do Stripe encontrado, prosseguindo sem verificação")
-        setDebugInfo("Prosseguindo sem verificação de pagamento (modo de desenvolvimento)")
+        console.log("Prosseguindo sem verificação de pagamento (modo de desenvolvimento)")
         paymentVerified = true
       }
 
@@ -129,18 +128,17 @@ export default function OnboardingStep3() {
 
       if (authError) {
         console.error("Erro ao criar usuário:", authError)
-        setDebugInfo(`Erro ao criar usuário: ${authError.message}`)
+        console.log(`Erro ao criar usuário: ${authError.message}`)
         throw new Error(authError.message)
       }
 
       if (!authData.user) {
         console.error("Usuário não criado")
-        setDebugInfo("Usuário não criado após tentativa de registro")
+        console.log("Usuário não criado após tentativa de registro")
         throw new Error("Erro ao criar usuário")
       }
 
-      console.log("Usuário criado com ID:", authData.user.id)
-      setDebugInfo((prev) => `${prev}\nUsuário criado com ID: ${authData.user.id}`)
+      console.log(`Usuário criado com ID: ${authData.user.id}`)
 
       // 3. Atualizar perfil com dados adicionais
       console.log("Atualizando perfil para usuário:", authData.user.id)
@@ -156,22 +154,19 @@ export default function OnboardingStep3() {
 
       if (profileError) {
         console.error("Erro ao atualizar perfil:", profileError)
-        setDebugInfo((prev) => `${prev}\nErro ao atualizar perfil: ${profileError.message}`)
+        console.log(`Erro ao atualizar perfil: ${profileError.message}`)
         throw new Error(profileError.message)
       }
 
       console.log("Perfil atualizado com sucesso")
-      setDebugInfo((prev) => `${prev}\nPerfil atualizado com sucesso`)
 
       // 4. Marcar a sessão como utilizada para evitar duplicações
       if (stripeSessionId) {
         const sessionMarked = await markSessionAsUsed(stripeSessionId, authData.user.id)
         if (sessionMarked) {
           console.log("Sessão marcada como utilizada com sucesso")
-          setDebugInfo((prev) => `${prev}\nSessão marcada como utilizada`)
         } else {
           console.warn("Não foi possível marcar a sessão como utilizada ou ela já foi utilizada anteriormente")
-          setDebugInfo((prev) => `${prev}\nAviso: Sessão já utilizada ou erro ao marcar`)
         }
       }
 
@@ -199,12 +194,11 @@ export default function OnboardingStep3() {
 
       if (subscriptionError) {
         console.error("Erro ao criar assinatura:", subscriptionError)
-        setDebugInfo((prev) => `${prev}\nErro ao criar assinatura: ${subscriptionError.message}`)
+        console.log(`Erro ao criar assinatura: ${subscriptionError.message}`)
         throw new Error(subscriptionError.message)
       }
 
       console.log("Assinatura criada com sucesso")
-      setDebugInfo((prev) => `${prev}\nAssinatura criada com sucesso`)
 
       // 6. Fazer logout para que o usuário faça login manualmente
       await supabase.auth.signOut()
@@ -217,7 +211,6 @@ export default function OnboardingStep3() {
 
       // 8. Mostrar mensagem de sucesso
       setIsSuccess(true)
-      setDebugInfo((prev) => `${prev}\nCadastro finalizado com sucesso!`)
 
       // 9. Redirecionar para login após 3 segundos
       setTimeout(() => {
@@ -267,14 +260,7 @@ export default function OnboardingStep3() {
             </Alert>
           )}
 
-          {debugInfo && (
-            <Alert className="bg-blue-50 text-blue-800 border-blue-200">
-              <AlertDescription className="whitespace-pre-line">
-                <strong>Informações de debug:</strong>
-                {debugInfo}
-              </AlertDescription>
-            </Alert>
-          )}
+          {/* Debug info removido */}
 
           <div className="rounded-lg border p-4 space-y-4">
             <div>
@@ -299,20 +285,9 @@ export default function OnboardingStep3() {
                   <span className="font-medium">WhatsApp:</span> {step2Data.whatsapp}
                 </p>
                 <p>
-                  <span className="font-medium">Código de segurança:</span> ******
+                  <span className="font-medium">Código de segurança:</span> {step2Data.securityCode}
                 </p>
               </div>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-3 p-4 rounded-lg bg-green-50 border border-green-200">
-            <CheckCircle className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
-            <div className="text-sm text-green-800">
-              <p className="font-medium">Pagamento confirmado!</p>
-              <p className="mt-1">
-                Seu pagamento foi processado com sucesso. Ao finalizar o cadastro, você terá acesso imediato à
-                plataforma.
-              </p>
             </div>
           </div>
 

@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { AlertCircle, Clock, CheckCircle } from "lucide-react"
+import { AlertCircle, Clock } from "lucide-react"
 import { formatCNPJ, cleanFormat, validateCNPJ } from "@/lib/utils/format"
 import { verifyPayment } from "@/lib/payment-verification"
 import { format, formatDistance } from "date-fns"
@@ -209,13 +209,11 @@ export default function OnboardingStep1() {
       <Card className="border-none shadow-lg">
         <CardHeader>
           <CardTitle>
-            {customerInfo.name ? `Bem-vindo, ${customerInfo.name.split(" ")[0]}!` : "Dados pessoais"}
+            {customerInfo.name
+              ? `Bem-vindo, ${customerInfo.name.split(" ")[0]}! Vamos completar seu cadastro`
+              : "Bem-vindo! Vamos completar seu cadastro"}
           </CardTitle>
-          <CardDescription>
-            {paymentVerified
-              ? "Seu pagamento foi confirmado. Vamos configurar sua conta."
-              : "Informe seus dados pessoais para configurar sua conta"}
-          </CardDescription>
+          {/* Subtítulo removido */}
         </CardHeader>
         <CardContent className="space-y-6">
           {error && (
@@ -225,12 +223,7 @@ export default function OnboardingStep1() {
             </Alert>
           )}
 
-          {paymentVerified && (
-            <Alert variant="default" className="bg-green-50 border-green-200 text-green-800">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <AlertDescription>Pagamento confirmado! Você pode continuar com o cadastro.</AlertDescription>
-            </Alert>
-          )}
+          {/* Alerta de pagamento confirmado removido */}
 
           {expirationInfo.date && (
             <Alert variant="default" className="bg-amber-50 border-amber-200 text-amber-800">

@@ -3,6 +3,7 @@ import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 import Stripe from "stripe"
 import { calculateExpirationDate, DEFAULT_SESSION_EXPIRATION_DAYS } from "@/lib/payment-verification"
+import { sanitizeObject } from "@/lib/utils/validation"
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2023-10-16",
@@ -13,6 +14,10 @@ const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
 export async function POST(req: Request) {
   const body = await req.text()
   const signature = req.headers.get("stripe-signature") as string
+
+  if (!signature) {
+    return NextResponse.json({ error: "Assinatura do webhook não fornecida" }, { status: 400 })
+  }
 
   let event: Stripe.Event
 
@@ -52,10 +57,13 @@ export async function POST(req: Request) {
         // Calcular data de expiração
         const expiresAt = calculateExpirationDate(new Date(), DEFAULT_SESSION_EXPIRATION_DAYS)
 
+        // Sanitizar os metadados antes de salvar
+        const sanitizedMetadata = sanitizeObject(session.metadata || {})
+
         // Armazenar a sessão do Stripe
         const { error: insertError } = await supabase.from("stripe_sessions").insert({
           session_id: session.id,
-          metadata: session.metadata || {},
+          metadata: sanitizedMetadata,
           status: "completed",
           customer_email: session.customer_details?.email || null,
           expires_at: expiresAt,
