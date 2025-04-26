@@ -12,12 +12,10 @@ import { FloatingCTA } from "@/components/landing/floating-cta"
 
 export const metadata: Metadata = {
   title: "Autodas - Guia DAS MEI Automática no WhatsApp",
-  description:
-    "Com o Autodas, sua guia DAS MEI chega automaticamente no WhatsApp todo mês. Experimente agora!",
+  description: "Com o Autodas, sua guia DAS MEI chega automaticamente no WhatsApp todo mês. Experimente agora!",
   openGraph: {
     title: "Autodas - Guia DAS MEI Automática no WhatsApp",
-    description:
-      "Com o Autodas, sua guia DAS MEI chega automaticamente no WhatsApp todo mês. Experimente agora!",
+    description: "Com o Autodas, sua guia DAS MEI chega automaticamente no WhatsApp todo mês. Experimente agora!",
     images: [
       {
         url: "/images/autodas-og-image.jpg",
