@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { AlertCircle, Clock } from "lucide-react"
+import { AlertCircle, Clock, CheckCircle } from "lucide-react"
 import { formatCNPJ, cleanFormat, validateCNPJ } from "@/lib/utils/format"
 import { verifyPayment } from "@/lib/payment-verification"
 import { format, formatDistance } from "date-fns"
@@ -24,6 +24,11 @@ export default function OnboardingStep1() {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isVerifying, setIsVerifying] = useState(true)
+  const [paymentVerified, setPaymentVerified] = useState(false)
+  const [customerInfo, setCustomerInfo] = useState<{
+    name?: string
+    email?: string
+  }>({})
   const [expirationInfo, setExpirationInfo] = useState<{
     date: string | null
     formattedDate: string | null
@@ -69,6 +74,27 @@ export default function OnboardingStep1() {
         // Armazenar metadados do plano se disponíveis
         if (verificationResult.metadata) {
           localStorage.setItem("stripe_session_metadata", JSON.stringify(verificationResult.metadata))
+
+          // Extrair informações do cliente se disponíveis
+          if (verificationResult.metadata.customer_name) {
+            setCustomerInfo((prev) => ({
+              ...prev,
+              name: verificationResult.metadata.customer_name,
+            }))
+
+            // Pré-preencher o nome se disponível
+            setFormData((prev) => ({
+              ...prev,
+              fullName: verificationResult.metadata.customer_name || "",
+            }))
+          }
+
+          if (verificationResult.metadata.customer_email) {
+            setCustomerInfo((prev) => ({
+              ...prev,
+              email: verificationResult.metadata.customer_email,
+            }))
+          }
         }
 
         // Processar informações de expiração
@@ -91,6 +117,7 @@ export default function OnboardingStep1() {
           }
         }
 
+        setPaymentVerified(true)
         setIsVerifying(false)
       } catch (err) {
         console.error("Erro ao verificar pagamento:", err)
@@ -181,14 +208,27 @@ export default function OnboardingStep1() {
     <OnboardingLayout currentStep={1} totalSteps={3}>
       <Card className="border-none shadow-lg">
         <CardHeader>
-          <CardTitle>Dados pessoais</CardTitle>
-          <CardDescription>Informe seus dados pessoais para configurar sua conta</CardDescription>
+          <CardTitle>
+            {customerInfo.name ? `Bem-vindo, ${customerInfo.name.split(" ")[0]}!` : "Dados pessoais"}
+          </CardTitle>
+          <CardDescription>
+            {paymentVerified
+              ? "Seu pagamento foi confirmado. Vamos configurar sua conta."
+              : "Informe seus dados pessoais para configurar sua conta"}
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {error && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          {paymentVerified && (
+            <Alert variant="default" className="bg-green-50 border-green-200 text-green-800">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <AlertDescription>Pagamento confirmado! Você pode continuar com o cadastro.</AlertDescription>
             </Alert>
           )}
 

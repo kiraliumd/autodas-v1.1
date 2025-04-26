@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { CheckoutHeader } from "@/components/checkout-header"
 import { Button } from "@/components/ui/button"
@@ -13,31 +13,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 export default function CheckoutPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
   const price = 47.9 // Preço anual em reais
-
-  // Verificar se há parâmetros de sucesso ou cancelamento
-  const paymentSuccess = searchParams.get("success")
-  const paymentCanceled = searchParams.get("canceled")
-
-  useEffect(() => {
-    if (paymentSuccess) {
-      setSuccess("Pagamento realizado com sucesso! Você será redirecionado para o cadastro.")
-      // Redirecionar para o onboarding após 2 segundos
-      setTimeout(() => {
-        const sessionId = searchParams.get("session_id")
-        if (sessionId) {
-          router.push(`/onboarding/step1?session_id=${sessionId}`)
-        }
-      }, 2000)
-    }
-
-    if (paymentCanceled) {
-      setError("O pagamento foi cancelado. Você pode tentar novamente quando estiver pronto.")
-    }
-  }, [paymentSuccess, paymentCanceled, router, searchParams])
 
   const handleCheckout = async () => {
     setIsLoading(true)
@@ -52,8 +30,8 @@ export default function CheckoutPage() {
         },
         body: JSON.stringify({
           price,
-          successUrl: `${window.location.origin}/checkout?success=true&session_id={CHECKOUT_SESSION_ID}`,
-          cancelUrl: `${window.location.origin}/checkout?canceled=true`,
+          successUrl: `${window.location.origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+          cancelUrl: `${window.location.origin}/checkout/canceled`,
         }),
       })
 
@@ -87,13 +65,6 @@ export default function CheckoutPage() {
           <Alert variant="destructive" className="mb-6">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-
-        {success && (
-          <Alert className="mb-6 bg-green-50 text-green-800 border-green-200">
-            <Check className="h-4 w-4 text-green-600" />
-            <AlertDescription>{success}</AlertDescription>
           </Alert>
         )}
 
@@ -158,7 +129,7 @@ export default function CheckoutPage() {
                 </div>
               </CardContent>
               <CardFooter className="flex-col space-y-4">
-                <Button className="w-full" size="lg" onClick={handleCheckout} disabled={isLoading || !!success}>
+                <Button className="w-full" size="lg" onClick={handleCheckout} disabled={isLoading}>
                   {isLoading ? "Processando..." : "Assinar agora"}
                 </Button>
                 <div className="text-center text-sm text-muted-foreground flex items-center justify-center">
