@@ -21,7 +21,7 @@ export function HowItWorks() {
 
   return (
     <section className="py-20 bg-white" id="how-it-works">
-      <div className="container">
+      <div className="container mx-auto max-w-[1120px]">
         <div className="text-center max-w-3xl mx-auto mb-16 animate-fade-in">
           <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
             Como o AutoDAS facilita sua vida
@@ -31,19 +31,54 @@ export function HowItWorks() {
           </p>
         </div>
 
-        <div className="grid gap-8 md:grid-cols-3">
-          {features.map((feature, index) => (
-            <div
-              key={index}
-              className={`bg-[#FFF8EE] p-8 rounded-xl transition-all hover:shadow-lg text-center animate-slide-up delay-${index * 100}`}
-            >
-              <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce-slow">
-                <feature.icon className="h-8 w-8 text-primary" />
+        <div className="flex flex-col space-y-16">
+          {/* Primeiro card - Conteúdo à esquerda, imagem à direita */}
+          <div className="flex flex-col md:flex-row items-center gap-8">
+            <div className="w-full md:w-1/2 animate-slide-up">
+              <div className="flex flex-col items-center md:items-start text-center md:text-left">
+                <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mb-4 animate-bounce-slow">
+                  <CalendarCheck className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">{features[0].title}</h3>
+                <p className="text-gray-700">{features[0].description}</p>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">{feature.title}</h3>
-              <p className="text-gray-700">{feature.description}</p>
             </div>
-          ))}
+            <div className="w-full md:w-1/2 h-64 bg-gray-100 rounded-lg animate-fade-in">
+              {/* Espaço para imagem que será adicionada depois */}
+            </div>
+          </div>
+
+          {/* Segundo card - Imagem à esquerda, conteúdo à direita */}
+          <div className="flex flex-col md:flex-row-reverse items-center gap-8">
+            <div className="w-full md:w-1/2 animate-slide-up delay-100">
+              <div className="flex flex-col items-center md:items-start text-center md:text-left">
+                <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mb-4 animate-bounce-slow">
+                  <MessageSquare className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">{features[1].title}</h3>
+                <p className="text-gray-700">{features[1].description}</p>
+              </div>
+            </div>
+            <div className="w-full md:w-1/2 h-64 bg-gray-100 rounded-lg animate-fade-in delay-100">
+              {/* Espaço para imagem que será adicionada depois */}
+            </div>
+          </div>
+
+          {/* Terceiro card - Conteúdo à esquerda, imagem à direita */}
+          <div className="flex flex-col md:flex-row items-center gap-8">
+            <div className="w-full md:w-1/2 animate-slide-up delay-200">
+              <div className="flex flex-col items-center md:items-start text-center md:text-left">
+                <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mb-4 animate-bounce-slow">
+                  <ShieldCheck className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">{features[2].title}</h3>
+                <p className="text-gray-700">{features[2].description}</p>
+              </div>
+            </div>
+            <div className="w-full md:w-1/2 h-64 bg-gray-100 rounded-lg animate-fade-in delay-200">
+              {/* Espaço para imagem que será adicionada depois */}
+            </div>
+          </div>
         </div>
       </div>
     </section>

@@ -17,7 +17,13 @@ export async function middleware(req: NextRequest) {
   const authRoutes = ["/login"]
 
   // Rotas de onboarding que não precisam de autenticação
-  const onboardingRoutes = ["/onboarding/step1", "/onboarding/step2", "/onboarding/step3"]
+  const onboardingRoutes = [
+    "/onboarding/step1",
+    "/onboarding/step2",
+    "/onboarding/step3",
+    "/onboarding/complete",
+    "/payment-processing",
+  ]
 
   const isProtectedRoute = protectedRoutes.some(
     (route) => req.nextUrl.pathname === route || req.nextUrl.pathname.startsWith(`${route}/`),

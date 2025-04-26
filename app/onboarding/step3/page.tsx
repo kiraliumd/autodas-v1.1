@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle, CheckCircle } from "lucide-react"
 import { getSupabaseClient } from "@/lib/supabase/client"
 import { addYears } from "date-fns"
+import { verifyPayment, markSessionAsUsed } from "@/lib/payment-verification"
 
 interface Step1Data {
   fullName: string
@@ -26,6 +27,7 @@ export default function OnboardingStep3() {
   const [step1Data, setStep1Data] = useState<Step1Data | null>(null)
   const [step2Data, setStep2Data] = useState<Step2Data | null>(null)
   const [stripeSessionId, setStripeSessionId] = useState<string | null>(null)
+  const [sessionMetadata, setSessionMetadata] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
@@ -38,6 +40,7 @@ export default function OnboardingStep3() {
     const step1 = localStorage.getItem("onboarding_step1")
     const step2 = localStorage.getItem("onboarding_step2")
     const sessionId = localStorage.getItem("stripe_session_id")
+    const metadataStr = localStorage.getItem("stripe_session_metadata")
 
     if (!step1 || !step2) {
       router.push("/onboarding/step1")
@@ -47,6 +50,14 @@ export default function OnboardingStep3() {
     setStep1Data(JSON.parse(step1))
     setStep2Data(JSON.parse(step2))
     setStripeSessionId(sessionId)
+
+    if (metadataStr) {
+      try {
+        setSessionMetadata(JSON.parse(metadataStr))
+      } catch (e) {
+        console.error("Erro ao parsear metadados da sessão:", e)
+      }
+    }
 
     // Debug: verificar se o sessionId está presente
     if (sessionId) {
@@ -68,30 +79,22 @@ export default function OnboardingStep3() {
 
     try {
       let paymentVerified = false
-      let sessionData = null
+      let verificationResult = null
 
       // 1. Verificar a sessão do Stripe se houver um ID
       if (stripeSessionId) {
         try {
           console.log("Verificando pagamento para sessão:", stripeSessionId)
-          const response = await fetch("/api/verify-payment", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ sessionId: stripeSessionId }),
-          })
 
-          const data = await response.json()
-          console.log("Resposta da verificação de pagamento:", data)
+          // Usar a nova função centralizada de verificação
+          verificationResult = await verifyPayment(stripeSessionId)
 
-          if (data.success) {
+          if (verificationResult.success && verificationResult.verified) {
             paymentVerified = true
-            sessionData = data.session
             setDebugInfo("Pagamento verificado com sucesso")
           } else {
-            setDebugInfo(`Erro na verificação: ${data.error}`)
-            throw new Error(data.error || "Erro ao verificar pagamento")
+            setDebugInfo(`Erro na verificação: ${verificationResult.error}`)
+            throw new Error(verificationResult.error || "Erro ao verificar pagamento")
           }
         } catch (verifyError) {
           console.error("Erro ao verificar pagamento:", verifyError)
@@ -160,16 +163,32 @@ export default function OnboardingStep3() {
       console.log("Perfil atualizado com sucesso")
       setDebugInfo((prev) => `${prev}\nPerfil atualizado com sucesso`)
 
-      // 4. Criar assinatura
+      // 4. Marcar a sessão como utilizada para evitar duplicações
+      if (stripeSessionId) {
+        const sessionMarked = await markSessionAsUsed(stripeSessionId, authData.user.id)
+        if (sessionMarked) {
+          console.log("Sessão marcada como utilizada com sucesso")
+          setDebugInfo((prev) => `${prev}\nSessão marcada como utilizada`)
+        } else {
+          console.warn("Não foi possível marcar a sessão como utilizada ou ela já foi utilizada anteriormente")
+          setDebugInfo((prev) => `${prev}\nAviso: Sessão já utilizada ou erro ao marcar`)
+        }
+      }
+
+      // 5. Criar assinatura
       const startDate = new Date()
       const endDate = addYears(startDate, 1)
+
+      // Usar metadados da sessão se disponíveis, ou valores padrão
+      const price = sessionMetadata?.price || verificationResult?.metadata?.price || 47.9
+      const planType = sessionMetadata?.planType || verificationResult?.metadata?.planType || "annual"
 
       console.log("Criando assinatura para usuário:", authData.user.id)
       const { error: subscriptionError } = await supabase.from("subscriptions").insert({
         user_id: authData.user.id,
         status: "active",
-        plan_type: "annual",
-        price: sessionData?.metadata?.price || 47.9,
+        plan_type: planType,
+        price: price,
         start_date: startDate.toISOString(),
         end_date: endDate.toISOString(),
         auto_renew: true,
@@ -187,19 +206,20 @@ export default function OnboardingStep3() {
       console.log("Assinatura criada com sucesso")
       setDebugInfo((prev) => `${prev}\nAssinatura criada com sucesso`)
 
-      // 5. Fazer logout para que o usuário faça login manualmente
+      // 6. Fazer logout para que o usuário faça login manualmente
       await supabase.auth.signOut()
 
-      // 6. Limpar dados do localStorage
+      // 7. Limpar dados do localStorage
       localStorage.removeItem("onboarding_step1")
       localStorage.removeItem("onboarding_step2")
       localStorage.removeItem("stripe_session_id")
+      localStorage.removeItem("stripe_session_metadata")
 
-      // 7. Mostrar mensagem de sucesso
+      // 8. Mostrar mensagem de sucesso
       setIsSuccess(true)
       setDebugInfo((prev) => `${prev}\nCadastro finalizado com sucesso!`)
 
-      // 8. Redirecionar para login após 3 segundos
+      // 9. Redirecionar para login após 3 segundos
       setTimeout(() => {
         router.push("/login")
       }, 3000)

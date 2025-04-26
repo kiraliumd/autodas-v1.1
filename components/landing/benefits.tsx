@@ -11,7 +11,7 @@ export function Benefits() {
 
   return (
     <section className="py-20 bg-[#FFF8EE]" id="benefits">
-      <div className="container">
+      <div className="container mx-auto max-w-[1120px]">
         <div className="text-center max-w-3xl mx-auto mb-12 animate-fade-in">
           <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Por que assinar o AutoDAS?</h2>
         </div>

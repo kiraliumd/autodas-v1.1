@@ -156,11 +156,7 @@ export default function DashboardPage() {
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-2xl font-bold">
-                  {subscription
-                    ? subscription.plan_type.charAt(0).toUpperCase() + subscription.plan_type.slice(1)
-                    : "Sem plano"}
-                </div>
+                <div className="text-2xl font-bold">{subscription ? "Anual" : "Sem plano"}</div>
                 <p className="text-xs text-muted-foreground mt-1">
                   {subscription ? `Válido até ${formattedEndDate}` : "Nenhuma assinatura ativa"}
                 </p>

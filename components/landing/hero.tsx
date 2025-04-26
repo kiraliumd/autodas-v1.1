@@ -6,7 +6,7 @@ import { Clock } from "lucide-react"
 export function LandingHero() {
   return (
     <section className="relative py-16 bg-[#FFF8EE]">
-      <div className="container">
+      <div className="container mx-auto max-w-[1120px]">
         {/* Banner de urgência */}
         <div className="bg-amber-100 border border-amber-300 rounded-lg p-3 mb-8 max-w-3xl mx-auto flex items-center justify-center gap-2 text-amber-800 animate-pulse-slow">
           <Clock className="h-4 w-4" />

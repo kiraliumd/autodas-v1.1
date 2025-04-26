@@ -10,8 +10,11 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle, Clock } from "lucide-react"
 import { formatCNPJ, cleanFormat, validateCNPJ } from "@/lib/utils/format"
+import { verifyPayment } from "@/lib/payment-verification"
+import { format, formatDistance } from "date-fns"
+import { ptBR } from "date-fns/locale"
 
 export default function OnboardingStep1() {
   const [formData, setFormData] = useState({
@@ -21,12 +24,21 @@ export default function OnboardingStep1() {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isVerifying, setIsVerifying] = useState(true)
+  const [expirationInfo, setExpirationInfo] = useState<{
+    date: string | null
+    formattedDate: string | null
+    timeLeft: string | null
+  }>({
+    date: null,
+    formattedDate: null,
+    timeLeft: null,
+  })
   const router = useRouter()
   const searchParams = useSearchParams()
   const sessionId = searchParams.get("session_id")
 
   useEffect(() => {
-    const verifyPayment = async () => {
+    const checkPayment = async () => {
       if (!sessionId) {
         setError("Sessão de pagamento não encontrada. Por favor, realize o pagamento primeiro.")
         setIsVerifying(false)
@@ -34,27 +46,51 @@ export default function OnboardingStep1() {
       }
 
       try {
-        // Verificar o pagamento usando a API
-        const response = await fetch("/api/verify-payment", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ sessionId }),
-        })
+        // Usar a função centralizada de verificação
+        const verificationResult = await verifyPayment(sessionId)
 
-        const data = await response.json()
+        if (!verificationResult.success || !verificationResult.verified) {
+          // Verificar se o erro é devido à expiração
+          if (verificationResult.error?.includes("expirou")) {
+            setError("Esta sessão de pagamento expirou. Por favor, realize um novo pagamento.")
+          } else {
+            setError(verificationResult.error || "Pagamento não confirmado. Por favor, realize o pagamento primeiro.")
+          }
 
-        if (!data.success) {
-          setError("Pagamento não confirmado. Por favor, realize o pagamento primeiro.")
           setTimeout(() => {
             router.push("/checkout")
           }, 3000)
           return
         }
 
-        // Armazenar o ID da sessão no localStorage para uso posterior
+        // Armazenar o ID da sessão e metadados no localStorage para uso posterior
         localStorage.setItem("stripe_session_id", sessionId)
+
+        // Armazenar metadados do plano se disponíveis
+        if (verificationResult.metadata) {
+          localStorage.setItem("stripe_session_metadata", JSON.stringify(verificationResult.metadata))
+        }
+
+        // Processar informações de expiração
+        if (verificationResult.expiresAt) {
+          try {
+            const expirationDate = new Date(verificationResult.expiresAt)
+            const formattedDate = format(expirationDate, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
+            const timeLeft = formatDistance(expirationDate, new Date(), {
+              addSuffix: true,
+              locale: ptBR,
+            })
+
+            setExpirationInfo({
+              date: verificationResult.expiresAt,
+              formattedDate,
+              timeLeft,
+            })
+          } catch (dateError) {
+            console.error("Erro ao processar data de expiração:", dateError)
+          }
+        }
+
         setIsVerifying(false)
       } catch (err) {
         console.error("Erro ao verificar pagamento:", err)
@@ -64,7 +100,7 @@ export default function OnboardingStep1() {
     }
 
     if (sessionId) {
-      verifyPayment()
+      checkPayment()
     } else {
       setIsVerifying(false)
     }
@@ -153,6 +189,16 @@ export default function OnboardingStep1() {
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          {expirationInfo.date && (
+            <Alert variant="default" className="bg-amber-50 border-amber-200 text-amber-800">
+              <Clock className="h-4 w-4 text-amber-600" />
+              <AlertDescription>
+                Esta sessão de pagamento expira em {expirationInfo.timeLeft} ({expirationInfo.formattedDate}). Por
+                favor, complete seu cadastro antes desse prazo.
+              </AlertDescription>
             </Alert>
           )}
 

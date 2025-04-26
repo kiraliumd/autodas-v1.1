@@ -26,7 +26,7 @@ export function Testimonials() {
 
   return (
     <section className="py-20 bg-[#FFF8EE]">
-      <div className="container">
+      <div className="container mx-auto max-w-[1120px]">
         <div className="text-center max-w-3xl mx-auto mb-16 animate-fade-in">
           <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">O que dizem nossos assinantes</h2>
         </div>

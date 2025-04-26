@@ -87,6 +87,7 @@ export interface Database {
           status: string
           customer_email: string | null
           created_at: string
+          expires_at: string | null
         }
         Insert: {
           id?: string
@@ -95,6 +96,7 @@ export interface Database {
           status: string
           customer_email?: string | null
           created_at?: string
+          expires_at?: string | null
         }
         Update: {
           id?: string
@@ -103,6 +105,33 @@ export interface Database {
           status?: string
           customer_email?: string | null
           created_at?: string
+          expires_at?: string | null
+        }
+      }
+      stripe_session_usage: {
+        Row: {
+          id: string
+          session_id: string
+          user_id: string | null
+          used_at: string
+          created_at: string
+          expires_at: string | null
+        }
+        Insert: {
+          id?: string
+          session_id: string
+          user_id?: string | null
+          used_at: string
+          created_at?: string
+          expires_at?: string | null
+        }
+        Update: {
+          id?: string
+          session_id?: string
+          user_id?: string | null
+          used_at?: string
+          created_at?: string
+          expires_at?: string | null
         }
       }
     }

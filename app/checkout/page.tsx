@@ -6,7 +6,7 @@ import { CheckoutHeader } from "@/components/checkout-header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Check, AlertCircle } from "lucide-react"
+import { Check, AlertCircle, Lock } from "lucide-react"
 import { getStripe } from "@/lib/stripe"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
@@ -52,7 +52,7 @@ export default function CheckoutPage() {
         },
         body: JSON.stringify({
           price,
-          successUrl: `${window.location.origin}/checkout?success=true&session_id={CHECKOUT_SESSION_ID}`,
+          successUrl: `${window.location.origin}/payment-processing?session_id={CHECKOUT_SESSION_ID}`,
           cancelUrl: `${window.location.origin}/checkout?canceled=true`,
         }),
       })
@@ -128,20 +128,14 @@ export default function CheckoutPage() {
                 <div className="space-y-4">
                   <h3 className="font-medium">O que está incluso:</h3>
                   <ul className="space-y-3">
-                    {[
-                      "Emissão ilimitada de notas fiscais",
-                      "Controle financeiro completo",
-                      "Gestão de clientes e fornecedores",
-                      "Relatórios detalhados",
-                      "Lembretes de obrigações fiscais",
-                      "Suporte prioritário via WhatsApp",
-                      "Acesso a todas as atualizações",
-                    ].map((item, i) => (
-                      <li key={i} className="flex items-start">
-                        <Check className="h-5 w-5 text-primary shrink-0 mr-2" />
-                        <span>{item}</span>
-                      </li>
-                    ))}
+                    {["Guia enviada todo mês via WhatsApp", "Código de segurança incluso", "Acesso por 12 meses"].map(
+                      (item, i) => (
+                        <li key={i} className="flex items-start">
+                          <Check className="h-5 w-5 text-primary shrink-0 mr-2" />
+                          <span>{item}</span>
+                        </li>
+                      ),
+                    )}
                   </ul>
                 </div>
               </CardContent>
@@ -165,21 +159,24 @@ export default function CheckoutPage() {
               </CardContent>
               <CardFooter className="flex-col space-y-4">
                 <Button className="w-full" size="lg" onClick={handleCheckout} disabled={isLoading || !!success}>
-                  {isLoading ? "Processando..." : "Pagar com Stripe"}
+                  {isLoading ? "Processando..." : "Assinar agora"}
                 </Button>
-                <div className="text-center text-sm text-muted-foreground">Pagamento seguro via Stripe</div>
+                <div className="text-center text-sm text-muted-foreground flex items-center justify-center">
+                  <Lock className="h-3 w-3 mr-1" />
+                  Pagamento Seguro
+                </div>
               </CardFooter>
             </Card>
 
-            <Card className="bg-amber-50 border-amber-200">
+            <Card className="bg-[#f2f8e8] border-[#c5e0a5]">
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3">
-                  <AlertCircle className="h-5 w-5 text-amber-500" />
-                  <div className="text-sm font-medium text-amber-800">Apenas para os primeiros 100 assinantes</div>
+                  <AlertCircle className="h-5 w-5 text-[#8DC63F]" />
+                  <div className="text-sm font-medium text-[#8DC63F]">Apenas para os primeiros 100 assinantes</div>
                 </div>
                 <div className="mt-3 pl-8">
-                  <div className="text-sm text-amber-700">
-                    Restam apenas <span className="font-bold">23</span> vagas com este preço promocional!
+                  <div className="text-sm text-[#8DC63F]">
+                    Restam apenas <span className="font-bold">21</span> vagas com este preço promocional!
                   </div>
                 </div>
               </CardContent>

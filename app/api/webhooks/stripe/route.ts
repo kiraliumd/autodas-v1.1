@@ -2,6 +2,7 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 import Stripe from "stripe"
+import { calculateExpirationDate, DEFAULT_SESSION_EXPIRATION_DAYS } from "@/lib/payment-verification"
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2023-10-16",
@@ -48,12 +49,16 @@ export async function POST(req: Request) {
           return NextResponse.json({ received: true })
         }
 
+        // Calcular data de expiração
+        const expiresAt = calculateExpirationDate(new Date(), DEFAULT_SESSION_EXPIRATION_DAYS)
+
         // Armazenar a sessão do Stripe
         const { error: insertError } = await supabase.from("stripe_sessions").insert({
           session_id: session.id,
           metadata: session.metadata || {},
           status: "completed",
           customer_email: session.customer_details?.email || null,
+          expires_at: expiresAt,
         })
 
         if (insertError) {

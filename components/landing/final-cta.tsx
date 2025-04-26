@@ -4,7 +4,7 @@ import Link from "next/link"
 export function FinalCTA() {
   return (
     <section className="py-20 bg-white">
-      <div className="container">
+      <div className="container mx-auto max-w-[1120px]">
         <div className="text-center max-w-3xl mx-auto animate-fade-in">
           <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
             Pronto para automatizar sua vida como MEI?

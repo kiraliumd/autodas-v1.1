@@ -15,7 +15,7 @@ export function LandingHeader() {
 
   return (
     <header className="w-full bg-white py-4 sticky top-0 z-50 shadow-sm">
-      <div className="container flex items-center justify-between">
+      <div className="container mx-auto max-w-[1120px] flex items-center justify-between">
         <Logo />
 
         {/* Desktop Navigation */}
