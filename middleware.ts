@@ -14,7 +14,7 @@ export async function middleware(req: NextRequest) {
   }
 
   // Permitir acesso à rota de bypass sem autenticação
-  if (req.nextUrl.pathname === "/admin/bypass") {
+  if (req.nextUrl.pathname === "/admin/bypass" || req.nextUrl.pathname === "/admin-bypass") {
     return NextResponse.next()
   }
 
@@ -43,7 +43,7 @@ export async function middleware(req: NextRequest) {
   const isOnboardingRoute = onboardingRoutes.some((route) => req.nextUrl.pathname === route)
 
   // Exceção para a rota de bypass do admin
-  if (req.nextUrl.pathname === "/admin/bypass") {
+  if (req.nextUrl.pathname === "/admin/bypass" || req.nextUrl.pathname === "/admin-bypass") {
     return res
   }
 
@@ -63,5 +63,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/onboarding/:path*", "/login", "/api/:path*", "/admin/:path*"],
+  matcher: ["/dashboard/:path*", "/onboarding/:path*", "/login", "/api/:path*", "/admin/:path*", "/admin-bypass"],
 }

@@ -1,22 +1,23 @@
 import { NextResponse } from "next/server"
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
 import { cookies } from "next/headers"
+import type { Database } from "@/lib/supabase/database.types"
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const cookieStore = cookies()
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore })
 
-    // Check if user is authenticated
+    // Verificar se o usuário está autenticado
     const {
       data: { session },
     } = await supabase.auth.getSession()
 
     if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
     }
 
-    // Check if user is an admin
+    // Verificar se o usuário é um administrador
     const { data: adminUser, error: adminError } = await supabase
       .from("admin_users")
       .select("*")
@@ -24,30 +25,54 @@ export async function GET() {
       .single()
 
     if (adminError || !adminUser) {
-      return NextResponse.json({ error: "Unauthorized: Not an admin user" }, { status: 403 })
+      return NextResponse.json({ error: "Não é um administrador" }, { status: 403 })
     }
 
-    // Get total users count
-    const { count: totalUsers } = await supabase.from("profiles").select("*", { count: "exact", head: true })
+    // Obter contagem de usuários administradores
+    const { count: adminCount, error: countError } = await supabase
+      .from("admin_users")
+      .select("*", { count: "exact", head: true })
 
-    // Get onboarding stats
-    const { data: onboardingStats } = await supabase.from("onboarding_sessions").select("completed, abandoned")
+    if (countError) {
+      throw countError
+    }
 
-    const completedCount = onboardingStats?.filter((s) => s.completed).length || 0
-    const abandonedCount = onboardingStats?.filter((s) => s.abandoned).length || 0
-    const inProgressCount = onboardingStats?.filter((s) => !s.completed && !s.abandoned).length || 0
+    // Obter estatísticas de onboarding
+    const { data: onboardingStats, error: onboardingError } = await supabase
+      .from("onboarding_sessions")
+      .select("completed, abandoned")
+
+    if (onboardingError) {
+      throw onboardingError
+    }
+
+    const completedCount = onboardingStats.filter((s) => s.completed).length
+    const abandonedCount = onboardingStats.filter((s) => s.abandoned).length
+    const inProgressCount = onboardingStats.filter((s) => !s.completed && !s.abandoned).length
+
+    // Obter sessões de onboarding recentes
+    const { data: recentSessions, error: sessionsError } = await supabase
+      .from("onboarding_sessions")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(5)
+
+    if (sessionsError) {
+      throw sessionsError
+    }
 
     return NextResponse.json({
-      totalUsers,
+      adminCount,
       onboardingStats: {
         completed: completedCount,
         abandoned: abandonedCount,
         inProgress: inProgressCount,
-        total: onboardingStats?.length || 0,
+        total: onboardingStats.length,
       },
+      recentSessions,
     })
-  } catch (error) {
-    console.error("Error in dashboard stats API:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  } catch (error: any) {
+    console.error("Erro ao obter estatísticas do dashboard:", error)
+    return NextResponse.json({ error: error.message || "Erro interno do servidor" }, { status: 500 })
   }
 }

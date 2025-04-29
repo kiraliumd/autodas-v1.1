@@ -1,25 +1,20 @@
+import { NextResponse } from "next/server"
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
 import { cookies } from "next/headers"
-import { NextResponse } from "next/server"
+import type { Database } from "@/lib/supabase/database.types"
 
 export async function POST(request: Request) {
   try {
     const cookieStore = cookies()
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore })
 
-    // Obter a sessão atual
+    // Verificar se o usuário está autenticado
     const {
       data: { session },
     } = await supabase.auth.getSession()
 
     if (!session) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Não autenticado",
-        },
-        { status: 401 },
-      )
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 })
     }
 
     // Verificar se o usuário é um administrador
@@ -30,14 +25,7 @@ export async function POST(request: Request) {
       .single()
 
     if (adminError || !adminUser) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Não é um administrador",
-          debug: { userId: session.user.id, adminError },
-        },
-        { status: 403 },
-      )
+      return NextResponse.json({ success: false, error: "Não é um administrador" }, { status: 403 })
     }
 
     // Atualizar último login
@@ -53,13 +41,7 @@ export async function POST(request: Request) {
       },
     })
   } catch (error: any) {
-    console.error("Admin verify error:", error)
-    return NextResponse.json(
-      {
-        success: false,
-        error: error.message || "Erro interno do servidor",
-      },
-      { status: 500 },
-    )
+    console.error("Erro na verificação de admin:", error)
+    return NextResponse.json({ success: false, error: error.message || "Erro interno do servidor" }, { status: 500 })
   }
 }

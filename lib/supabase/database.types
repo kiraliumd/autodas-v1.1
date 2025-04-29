@@ -1,4 +1,10 @@
-export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
 
 export interface Database {
   public: {
@@ -52,7 +58,7 @@ export interface Database {
           status: "active" | "canceled" | "expired" | "trial"
           plan_type?: string
           price: number
-          start_date?: string
+          start_date: string
           end_date: string
           auto_renew?: boolean
           created_at?: string
@@ -268,3 +274,5 @@ export interface Database {
     }
   }
 }
+
+export type { Database }

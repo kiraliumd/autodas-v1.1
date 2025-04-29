@@ -11,7 +11,8 @@ export async function POST(request: Request) {
     }
 
     // Criar cliente Supabase com cookies
-    const supabase = createRouteHandlerClient({ cookies })
+    const cookieStore = cookies()
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
 
     // 1. Autenticar com Supabase
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
