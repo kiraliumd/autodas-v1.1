@@ -13,6 +13,11 @@ export async function middleware(req: NextRequest) {
     return securityResponse
   }
 
+  // Permitir acesso à rota de bypass sem autenticação
+  if (req.nextUrl.pathname === "/admin/bypass") {
+    return NextResponse.next()
+  }
+
   const res = NextResponse.next()
   const supabase = createMiddlewareClient({ req, res })
 
@@ -21,7 +26,7 @@ export async function middleware(req: NextRequest) {
   } = await supabase.auth.getSession()
 
   // Rotas protegidas que requerem autenticação
-  const protectedRoutes = ["/dashboard"]
+  const protectedRoutes = ["/dashboard", "/admin"]
 
   // Rotas que não devem ser acessadas se já estiver logado
   const authRoutes = ["/login"]
@@ -36,6 +41,11 @@ export async function middleware(req: NextRequest) {
   const isAuthRoute = authRoutes.some((route) => req.nextUrl.pathname === route)
 
   const isOnboardingRoute = onboardingRoutes.some((route) => req.nextUrl.pathname === route)
+
+  // Exceção para a rota de bypass do admin
+  if (req.nextUrl.pathname === "/admin/bypass") {
+    return res
+  }
 
   // Redirecionar para login se tentar acessar rota protegida sem estar logado
   if (isProtectedRoute && !session) {
@@ -53,5 +63,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/onboarding/:path*", "/login", "/api/:path*"],
+  matcher: ["/dashboard/:path*", "/onboarding/:path*", "/login", "/api/:path*", "/admin/:path*"],
 }

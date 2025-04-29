@@ -3,135 +3,111 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export interface Database {
   public: {
     Tables: {
-      profiles: {
+      // Existing tables...
+
+      onboarding_sessions: {
         Row: {
           id: string
-          full_name: string | null
-          cnpj: string | null
-          whatsapp: string | null
-          security_code: string | null
+          stripe_session_id: string | null
+          current_step: number
+          data: Json
+          email: string | null
+          last_activity: string
           created_at: string
-          updated_at: string
+          completed: boolean
+          abandoned: boolean
+          recovery_emails_sent: number
+          last_recovery_email: string | null
+          recovery_token: string | null
         }
         Insert: {
-          id: string
-          full_name?: string | null
-          cnpj?: string | null
-          whatsapp?: string | null
-          security_code?: string | null
+          id?: string
+          stripe_session_id?: string | null
+          current_step: number
+          data: Json
+          email?: string | null
+          last_activity?: string
           created_at?: string
-          updated_at?: string
+          completed?: boolean
+          abandoned?: boolean
+          recovery_emails_sent?: number
+          last_recovery_email?: string | null
+          recovery_token?: string | null
         }
         Update: {
           id?: string
-          full_name?: string | null
-          cnpj?: string | null
-          whatsapp?: string | null
-          security_code?: string | null
+          stripe_session_id?: string | null
+          current_step?: number
+          data?: Json
+          email?: string | null
+          last_activity?: string
           created_at?: string
-          updated_at?: string
+          completed?: boolean
+          abandoned?: boolean
+          recovery_emails_sent?: number
+          last_recovery_email?: string | null
+          recovery_token?: string | null
         }
       }
-      subscriptions: {
+
+      recovery_email_logs: {
         Row: {
           id: string
-          user_id: string
-          status: "active" | "canceled" | "expired" | "trial"
-          plan_type: string
-          price: number
-          start_date: string
-          end_date: string
-          auto_renew: boolean
-          created_at: string
-          updated_at: string
-          stripe_session_id?: string | null
-          stripe_customer_id?: string | null
-          stripe_subscription_id?: string | null
+          onboarding_session_id: string
+          email: string
+          sent_at: string
+          email_type: string
+          status: string
+          resend_id: string | null
         }
         Insert: {
           id?: string
-          user_id: string
-          status: "active" | "canceled" | "expired" | "trial"
-          plan_type?: string
-          price: number
-          start_date?: string
-          end_date: string
-          auto_renew?: boolean
-          created_at?: string
-          updated_at?: string
-          stripe_session_id?: string | null
-          stripe_customer_id?: string | null
-          stripe_subscription_id?: string | null
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          status?: "active" | "canceled" | "expired" | "trial"
-          plan_type?: string
-          price?: number
-          start_date?: string
-          end_date?: string
-          auto_renew?: boolean
-          created_at?: string
-          updated_at?: string
-          stripe_session_id?: string | null
-          stripe_customer_id?: string | null
-          stripe_subscription_id?: string | null
-        }
-      }
-      stripe_sessions: {
-        Row: {
-          id: string
-          session_id: string
-          metadata: { [key: string]: string } | null
-          status: string
-          customer_email: string | null
-          created_at: string
-          expires_at: string | null
-        }
-        Insert: {
-          id?: string
-          session_id: string
-          metadata?: { [key: string]: string } | null
-          status: string
-          customer_email?: string | null
-          created_at?: string
-          expires_at?: string | null
-        }
-        Update: {
-          id?: string
-          session_id?: string
-          metadata?: { [key: string]: string } | null
+          onboarding_session_id: string
+          email: string
+          sent_at?: string
+          email_type: string
           status?: string
-          customer_email?: string | null
-          created_at?: string
-          expires_at?: string | null
-        }
-      }
-      stripe_session_usage: {
-        Row: {
-          id: string
-          session_id: string
-          user_id: string | null
-          used_at: string
-          created_at: string
-          expires_at: string | null
-        }
-        Insert: {
-          id?: string
-          session_id: string
-          user_id?: string | null
-          used_at: string
-          created_at?: string
-          expires_at?: string | null
+          resend_id?: string | null
         }
         Update: {
           id?: string
-          session_id?: string
-          user_id?: string | null
-          used_at?: string
+          onboarding_session_id?: string
+          email?: string
+          sent_at?: string
+          email_type?: string
+          status?: string
+          resend_id?: string | null
+        }
+      }
+
+      // Admin tables
+      admin_users: {
+        Row: {
+          id: string
+          email: string
+          name: string
+          role: string
+          created_at: string
+          last_login: string | null
+          is_active: boolean
+        }
+        Insert: {
+          id: string
+          email: string
+          name: string
+          role: string
           created_at?: string
-          expires_at?: string | null
+          last_login?: string | null
+          is_active?: boolean
+        }
+        Update: {
+          id?: string
+          email?: string
+          name?: string
+          role?: string
+          created_at?: string
+          last_login?: string | null
+          is_active?: boolean
         }
       }
     }

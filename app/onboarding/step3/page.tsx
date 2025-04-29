@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { OnboardingLayout } from "@/components/onboarding-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,6 +10,7 @@ import { AlertCircle, CheckCircle } from "lucide-react"
 import { getSupabaseClient } from "@/lib/supabase/client"
 import { addYears } from "date-fns"
 import { verifyPayment, markSessionAsUsed } from "@/lib/payment-verification"
+import { useOnboardingTracker } from "@/hooks/use-onboarding-tracker"
 
 interface Step1Data {
   fullName: string
@@ -31,9 +32,20 @@ export default function OnboardingStep3() {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
-  // Estado de debug removido, usando apenas console.log
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const recoveryToken = searchParams.get("recovery_token")
   const supabase = getSupabaseClient()
+
+  // Track onboarding progress
+  const onboardingData = {
+    step1: step1Data,
+    step2: step2Data,
+    stripeSessionId: stripeSessionId || undefined,
+    stripeSessionMetadata: sessionMetadata,
+  }
+
+  const { completeOnboarding } = useOnboardingTracker(3, onboardingData)
 
   useEffect(() => {
     // Carregar dados das etapas anteriores
@@ -81,7 +93,7 @@ export default function OnboardingStep3() {
       let verificationResult = null
 
       // 1. Verificar a sessão do Stripe se houver um ID
-      if (stripeSessionId) {
+      if (stripeSessionId && !recoveryToken) {
         try {
           console.log("Verificando pagamento para sessão:", stripeSessionId)
 
@@ -104,10 +116,16 @@ export default function OnboardingStep3() {
           paymentVerified = true
         }
       } else {
-        // Para desenvolvimento, permitir continuar mesmo sem ID de sessão
-        console.warn("Nenhum ID de sessão do Stripe encontrado, prosseguindo sem verificação")
-        console.log("Prosseguindo sem verificação de pagamento (modo de desenvolvimento)")
-        paymentVerified = true
+        // If we have a recovery token, skip payment verification
+        if (recoveryToken) {
+          paymentVerified = true
+          console.log("Usando token de recuperação, pulando verificação de pagamento")
+        } else {
+          // Para desenvolvimento, permitir continuar mesmo sem ID de sessão
+          console.warn("Nenhum ID de sessão do Stripe encontrado, prosseguindo sem verificação")
+          console.log("Prosseguindo sem verificação de pagamento (modo de desenvolvimento)")
+          paymentVerified = true
+        }
       }
 
       if (!paymentVerified) {
@@ -129,6 +147,12 @@ export default function OnboardingStep3() {
       if (authError) {
         console.error("Erro ao criar usuário:", authError)
         console.log(`Erro ao criar usuário: ${authError.message}`)
+
+        // Verificar se é um erro de CNPJ duplicado
+        if (authError.message?.includes("User already registered")) {
+          throw new Error("Este email já está cadastrado. Por favor, use outro email ou faça login.")
+        }
+
         throw new Error(authError.message)
       }
 
@@ -155,6 +179,12 @@ export default function OnboardingStep3() {
       if (profileError) {
         console.error("Erro ao atualizar perfil:", profileError)
         console.log(`Erro ao atualizar perfil: ${profileError.message}`)
+
+        // Verificar se é um erro de CNPJ duplicado
+        if (profileError.message?.includes("profiles_cnpj_key")) {
+          throw new Error("Este CNPJ já está cadastrado. Por favor, informe um CNPJ diferente.")
+        }
+
         throw new Error(profileError.message)
       }
 
@@ -200,19 +230,22 @@ export default function OnboardingStep3() {
 
       console.log("Assinatura criada com sucesso")
 
-      // 6. Fazer logout para que o usuário faça login manualmente
+      // 6. Mark onboarding as complete
+      await completeOnboarding()
+
+      // 7. Fazer logout para que o usuário faça login manualmente
       await supabase.auth.signOut()
 
-      // 7. Limpar dados do localStorage
+      // 8. Limpar dados do localStorage
       localStorage.removeItem("onboarding_step1")
       localStorage.removeItem("onboarding_step2")
       localStorage.removeItem("stripe_session_id")
       localStorage.removeItem("stripe_session_metadata")
 
-      // 8. Mostrar mensagem de sucesso
+      // 9. Mostrar mensagem de sucesso
       setIsSuccess(true)
 
-      // 9. Redirecionar para login após 3 segundos
+      // 10. Redirecionar para login após 3 segundos
       setTimeout(() => {
         router.push("/login")
       }, 3000)
@@ -260,7 +293,12 @@ export default function OnboardingStep3() {
             </Alert>
           )}
 
-          {/* Debug info removido */}
+          {recoveryToken && (
+            <Alert variant="default" className="bg-green-50 border-green-200 text-green-800">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <AlertDescription>Você retomou seu cadastro com sucesso! Agora é só finalizar.</AlertDescription>
+            </Alert>
+          )}
 
           <div className="rounded-lg border p-4 space-y-4">
             <div>
@@ -303,7 +341,15 @@ export default function OnboardingStep3() {
           </div>
         </CardContent>
         <CardFooter className="flex justify-between">
-          <Button variant="outline" onClick={() => router.push("/onboarding/step2")} disabled={isLoading || isSuccess}>
+          <Button
+            variant="outline"
+            onClick={() => {
+              // Preserve recovery token when navigating back
+              const queryParam = recoveryToken ? `?recovery_token=${recoveryToken}` : ""
+              router.push(`/onboarding/step2${queryParam}`)
+            }}
+            disabled={isLoading || isSuccess}
+          >
             Voltar
           </Button>
           <Button onClick={handleSubmit} disabled={isLoading || isSuccess}>
