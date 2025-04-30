@@ -51,6 +51,8 @@ export default function OnboardingStep1() {
       }
 
       try {
+        console.log(`Verificando pagamento para sessão: ${sessionId}`)
+
         // Usar a função centralizada de verificação
         const verificationResult = await verifyPayment(sessionId)
 
@@ -62,6 +64,7 @@ export default function OnboardingStep1() {
             setError(verificationResult.error || "Pagamento não confirmado. Por favor, realize o pagamento primeiro.")
           }
 
+          // Redirecionar para checkout após 3 segundos
           setTimeout(() => {
             router.push("/checkout")
           }, 3000)
@@ -121,8 +124,13 @@ export default function OnboardingStep1() {
         setIsVerifying(false)
       } catch (err) {
         console.error("Erro ao verificar pagamento:", err)
-        setError("Erro ao verificar pagamento. Por favor, tente novamente.")
+        setError("Erro ao verificar pagamento. Por favor, tente novamente mais tarde.")
         setIsVerifying(false)
+
+        // Redirecionar para checkout após 3 segundos
+        setTimeout(() => {
+          router.push("/checkout")
+        }, 3000)
       }
     }
 

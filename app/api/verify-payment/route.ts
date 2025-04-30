@@ -2,7 +2,12 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 import Stripe from "stripe"
-import { calculateExpirationDate, DEFAULT_SESSION_EXPIRATION_DAYS, isExpired } from "@/lib/payment-verification"
+import {
+  calculateExpirationDate,
+  DEFAULT_SESSION_EXPIRATION_DAYS,
+  isExpired,
+  isTestSession,
+} from "@/lib/payment-verification"
 import { z } from "zod"
 import { sanitizeObject, validateData } from "@/lib/utils/validation"
 
@@ -13,6 +18,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 // Esquema de validação para a requisição
 const verifyPaymentSchema = z.object({
   sessionId: z.string().min(1, "ID da sessão é obrigatório").max(255),
+  isTest: z.boolean().optional(),
 })
 
 export async function POST(req: Request) {
@@ -25,8 +31,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: validation.error }, { status: 400 })
     }
 
-    const { sessionId } = sanitizeObject(validation.data)
+    const { sessionId, isTest: isTestParam } = sanitizeObject(validation.data)
     console.log(`Verificando pagamento para sessão: ${sessionId}`)
+
+    // Verificar se é uma sessão de teste
+    const isTest = isTestParam || isTestSession(sessionId)
 
     // Verificar no banco de dados primeiro
     const cookieStore = cookies()
@@ -79,14 +88,60 @@ export async function POST(req: Request) {
       })
     }
 
-    // Se não encontrou no banco, verificar diretamente no Stripe
+    // Para sessões de teste, criar uma entrada no banco de dados
+    if (isTest) {
+      console.log(`Sessão de teste detectada: ${sessionId}. Registrando no banco de dados.`)
+      const expiresAt = calculateExpirationDate()
+
+      try {
+        const { data: newSession, error: insertError } = await supabase
+          .from("stripe_sessions")
+          .insert({
+            session_id: sessionId,
+            metadata: {
+              price: "47.90",
+              plan_type: "annual",
+              is_test: true,
+            },
+            status: "completed",
+            customer_email: "test@example.com",
+            expires_at: expiresAt,
+          })
+          .select()
+          .single()
+
+        if (insertError) {
+          console.error("Erro ao inserir sessão de teste:", insertError)
+          return NextResponse.json({ success: false, error: "Erro ao registrar sessão de teste" }, { status: 500 })
+        }
+
+        return NextResponse.json({
+          success: true,
+          session: {
+            id: sessionId,
+            payment_status: "paid",
+            metadata: {
+              price: "47.90",
+              plan_type: "annual",
+              is_test: true,
+            },
+            expires_at: expiresAt,
+          },
+        })
+      } catch (insertError) {
+        console.error("Erro ao inserir sessão de teste:", insertError)
+        return NextResponse.json({ success: false, error: "Erro ao registrar sessão de teste" }, { status: 500 })
+      }
+    }
+
+    // Se não encontrou no banco e não é uma sessão de teste, verificar diretamente no Stripe
     try {
       console.log(`Consultando Stripe para sessão: ${sessionId}`)
       const session = await stripe.checkout.sessions.retrieve(sessionId)
 
       if (session.payment_status !== "paid") {
         console.log(`Pagamento não concluído para sessão ${sessionId}`)
-        return NextResponse.json({ success: false, error: "Payment not completed" }, { status: 400 })
+        return NextResponse.json({ success: false, error: "Pagamento não concluído" }, { status: 400 })
       }
 
       // Calcular data de expiração
@@ -95,20 +150,19 @@ export async function POST(req: Request) {
       // Sanitizar os metadados antes de salvar
       const sanitizedMetadata = sanitizeObject(session.metadata || {})
 
-      // Salvar a sessão no banco de dados se não existir
-      if (!existingSession) {
-        console.log(`Salvando sessão ${sessionId} no banco de dados`)
-        const { error: insertError } = await supabase.from("stripe_sessions").insert({
-          session_id: sessionId,
-          metadata: sanitizedMetadata,
-          status: "completed",
-          customer_email: session.customer_details?.email || null,
-          expires_at: expiresAt,
-        })
+      // Salvar a sessão no banco de dados
+      console.log(`Salvando sessão ${sessionId} no banco de dados`)
+      const { error: insertError } = await supabase.from("stripe_sessions").insert({
+        session_id: sessionId,
+        metadata: sanitizedMetadata,
+        status: "completed",
+        customer_email: session.customer_details?.email || null,
+        expires_at: expiresAt,
+      })
 
-        if (insertError) {
-          console.error(`Erro ao salvar sessão ${sessionId}:`, insertError)
-        }
+      if (insertError) {
+        console.error(`Erro ao salvar sessão ${sessionId}:`, insertError)
+        return NextResponse.json({ success: false, error: "Erro ao salvar sessão" }, { status: 500 })
       }
 
       // Adicionar a data de expiração ao objeto de sessão
@@ -120,26 +174,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true, session: sessionWithExpiration })
     } catch (stripeError) {
       console.error(`Erro ao verificar sessão ${sessionId} no Stripe:`, stripeError)
-
-      // Para fins de desenvolvimento, permitir continuar
-      console.warn("Permitindo prosseguir mesmo sem verificação completa (apenas para desenvolvimento)")
-
-      // Calcular data de expiração
-      const expiresAt = calculateExpirationDate(new Date(), DEFAULT_SESSION_EXPIRATION_DAYS)
-
-      return NextResponse.json({
-        success: true,
-        session: {
-          id: sessionId,
-          payment_status: "paid",
-          metadata: { price: "47.90", plan_type: "annual" },
-          expires_at: expiresAt,
-        },
-        dev_mode: true,
-      })
+      return NextResponse.json({ success: false, error: "Erro ao verificar pagamento no Stripe" }, { status: 500 })
     }
   } catch (error) {
     console.error("Erro geral na verificação de pagamento:", error)
-    return NextResponse.json({ success: false, error: "Failed to verify payment" }, { status: 500 })
+    return NextResponse.json({ success: false, error: "Erro ao verificar pagamento" }, { status: 500 })
   }
 }
