@@ -3,7 +3,7 @@ import { Check } from "lucide-react"
 export function Benefits() {
   const benefits = [
     "Receba a guia no WhatsApp todos os meses",
-    "Emissão automática garantida",
+    "Emissão automática garantida até dezembro",
     "Suporte direto e humanizado",
     "Plataforma segura, com código de segurança exclusivo",
     "Zero mensalidade: pague uma vez e fique tranquilo o ano todo",
