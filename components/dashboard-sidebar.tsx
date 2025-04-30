@@ -2,7 +2,7 @@ import type React from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { Home, Settings, HelpCircle, ImageIcon } from "lucide-react"
+import { Home, Settings, HelpCircle } from "lucide-react"
 
 interface SidebarNavProps extends React.HTMLAttributes<HTMLElement> {
   items: {
@@ -54,11 +54,6 @@ export function DashboardNav({ currentPath }: { currentPath: string }) {
       title: "Precisa de Ajuda?",
       href: "/central-de-ajuda",
       icon: HelpCircle,
-    },
-    {
-      title: "Gerenciar Imagens",
-      href: "/dashboard/admin/images",
-      icon: ImageIcon,
     },
   ]
 
