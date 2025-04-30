@@ -1,8 +1,0 @@
-{
-  "crons": [
-    {
-      "path": "/api/onboarding/process-abandoned",
-      "schedule": "0 */6 * * *"
-    }
-  ]
-}

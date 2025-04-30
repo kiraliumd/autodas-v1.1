@@ -1,8 +1,9 @@
 "use client"
 
 import type React from "react"
+
 import { useState, useEffect } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { OnboardingLayout } from "@/components/onboarding-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,7 +12,6 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 import { formatWhatsApp, cleanFormat } from "@/lib/utils/format"
-import { useOnboardingTracker } from "@/hooks/use-onboarding-tracker"
 
 export default function OnboardingStep2() {
   const [formData, setFormData] = useState({
@@ -23,32 +23,6 @@ export default function OnboardingStep2() {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const recoveryToken = searchParams.get("recovery_token")
-
-  // Load step1 data for tracking
-  const [step1Data, setStep1Data] = useState<any>(null)
-
-  useEffect(() => {
-    const savedStep1Data = localStorage.getItem("onboarding_step1")
-    if (savedStep1Data) {
-      try {
-        setStep1Data(JSON.parse(savedStep1Data))
-      } catch (e) {
-        console.error("Erro ao carregar dados do step1:", e)
-      }
-    }
-  }, [])
-
-  // Track onboarding progress
-  const sessionId = localStorage.getItem("stripe_session_id") || undefined
-  const onboardingData = {
-    step1: step1Data,
-    step2: formData,
-    stripeSessionId: sessionId,
-  }
-
-  useOnboardingTracker(2, onboardingData)
 
   useEffect(() => {
     // Verificar se o usuário completou a etapa 1
@@ -65,6 +39,19 @@ export default function OnboardingStep2() {
         } catch (e) {
           console.error("Erro ao carregar dados salvos do step2:", e)
         }
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    // Carregar dados salvos do step2 se existirem
+    const savedStep2Data = localStorage.getItem("onboarding_step2")
+    if (savedStep2Data) {
+      try {
+        const parsedData = JSON.parse(savedStep2Data)
+        setFormData(parsedData)
+      } catch (e) {
+        console.error("Erro ao carregar dados salvos do step2:", e)
       }
     }
   }, [])
@@ -123,11 +110,8 @@ export default function OnboardingStep2() {
         }),
       )
 
-      // Preserve recovery token when navigating
-      const queryParam = recoveryToken ? `?recovery_token=${recoveryToken}` : ""
-
       // Avançar para a próxima etapa
-      router.push(`/onboarding/step3${queryParam}`)
+      router.push("/onboarding/step3")
     } catch (err) {
       setError("Ocorreu um erro. Por favor, tente novamente.")
     } finally {
@@ -147,13 +131,6 @@ export default function OnboardingStep2() {
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
-          {recoveryToken && (
-            <Alert variant="default" className="bg-green-50 border-green-200 text-green-800">
-              <AlertCircle className="h-4 w-4 text-green-600" />
-              <AlertDescription>Bem-vindo de volta! Você pode continuar seu cadastro de onde parou.</AlertDescription>
             </Alert>
           )}
 
@@ -219,9 +196,13 @@ export default function OnboardingStep2() {
           <Button
             variant="outline"
             onClick={() => {
-              // Preserve recovery token when navigating back
-              const queryParam = recoveryToken ? `?recovery_token=${recoveryToken}` : ""
-              router.push(`/onboarding/step1${queryParam}`)
+              // Preservar o session_id ao voltar para o step1
+              const sessionId = localStorage.getItem("stripe_session_id")
+              if (sessionId) {
+                router.push(`/onboarding/step1?session_id=${sessionId}`)
+              } else {
+                router.push("/onboarding/step1")
+              }
             }}
           >
             Voltar

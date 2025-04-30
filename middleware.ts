@@ -1,8 +1,18 @@
+import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs"
+import { securityMiddleware } from "./middleware-security"
 
 export async function middleware(req: NextRequest) {
+  // Aplicar middleware de segurança primeiro
+  const securityResponse = await securityMiddleware(req)
+
+  // Se o middleware de segurança retornar uma resposta diferente de next(),
+  // significa que houve um problema de segurança, então retornamos essa resposta
+  if (securityResponse.status !== 200) {
+    return securityResponse
+  }
+
   const res = NextResponse.next()
   const supabase = createMiddlewareClient({ req, res })
 
@@ -10,18 +20,32 @@ export async function middleware(req: NextRequest) {
     data: { session },
   } = await supabase.auth.getSession()
 
-  // Verificar se o usuário está autenticado para rotas protegidas
-  if (!session && (req.nextUrl.pathname.startsWith("/dashboard") || req.nextUrl.pathname.startsWith("/onboarding"))) {
-    const redirectUrl = req.nextUrl.clone()
-    redirectUrl.pathname = "/login"
-    redirectUrl.searchParams.set("redirectedFrom", req.nextUrl.pathname)
+  // Rotas protegidas que requerem autenticação
+  const protectedRoutes = ["/dashboard"]
+
+  // Rotas que não devem ser acessadas se já estiver logado
+  const authRoutes = ["/login"]
+
+  // Rotas de onboarding que não precisam de autenticação
+  const onboardingRoutes = ["/onboarding/step1", "/onboarding/step2", "/onboarding/step3"]
+
+  const isProtectedRoute = protectedRoutes.some(
+    (route) => req.nextUrl.pathname === route || req.nextUrl.pathname.startsWith(`${route}/`),
+  )
+
+  const isAuthRoute = authRoutes.some((route) => req.nextUrl.pathname === route)
+
+  const isOnboardingRoute = onboardingRoutes.some((route) => req.nextUrl.pathname === route)
+
+  // Redirecionar para login se tentar acessar rota protegida sem estar logado
+  if (isProtectedRoute && !session) {
+    const redirectUrl = new URL("/login", req.url)
     return NextResponse.redirect(redirectUrl)
   }
 
-  // Redirecionar usuários autenticados da página de login para o dashboard
-  if (session && (req.nextUrl.pathname === "/login" || req.nextUrl.pathname === "/register")) {
-    const redirectUrl = req.nextUrl.clone()
-    redirectUrl.pathname = "/dashboard"
+  // Redirecionar para dashboard se tentar acessar rota de autenticação já estando logado
+  if (isAuthRoute && session) {
+    const redirectUrl = new URL("/dashboard", req.url)
     return NextResponse.redirect(redirectUrl)
   }
 
@@ -29,5 +53,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/onboarding/:path*", "/login", "/register", "/reset-password/:path*"],
+  matcher: ["/dashboard/:path*", "/onboarding/:path*", "/login", "/api/:path*"],
 }

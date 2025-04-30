@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { OnboardingLayout } from "@/components/onboarding-layout"
@@ -15,7 +16,6 @@ import { verifyPayment } from "@/lib/payment-verification"
 import { format, formatDistance } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { getSupabaseClient } from "@/lib/supabase/client"
-import { useOnboardingTracker } from "@/hooks/use-onboarding-tracker"
 
 export default function OnboardingStep1() {
   const [formData, setFormData] = useState({
@@ -42,15 +42,6 @@ export default function OnboardingStep1() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const sessionId = searchParams.get("session_id")
-  const recoveryToken = searchParams.get("recovery_token")
-
-  // Track onboarding progress
-  const onboardingData = {
-    step1: formData,
-    stripeSessionId: sessionId || undefined,
-  }
-
-  useOnboardingTracker(1, onboardingData)
 
   useEffect(() => {
     // Carregar dados salvos do step1 se existirem
@@ -68,22 +59,15 @@ export default function OnboardingStep1() {
     }
 
     const checkPayment = async () => {
-      if (!sessionId && !recoveryToken) {
+      if (!sessionId) {
         setError("Sessão de pagamento não encontrada. Por favor, realize o pagamento primeiro.")
         setIsVerifying(false)
         return
       }
 
       try {
-        // If we have a recovery token, we can skip payment verification
-        if (recoveryToken) {
-          setPaymentVerified(true)
-          setIsVerifying(false)
-          return
-        }
-
         // Usar a função centralizada de verificação
-        const verificationResult = await verifyPayment(sessionId!)
+        const verificationResult = await verifyPayment(sessionId)
 
         if (!verificationResult.success || !verificationResult.verified) {
           // Verificar se o erro é devido à expiração
@@ -100,7 +84,7 @@ export default function OnboardingStep1() {
         }
 
         // Armazenar o ID da sessão e metadados no localStorage para uso posterior
-        localStorage.setItem("stripe_session_id", sessionId!)
+        localStorage.setItem("stripe_session_id", sessionId)
 
         // Armazenar metadados do plano se disponíveis
         if (verificationResult.metadata) {
@@ -157,12 +141,12 @@ export default function OnboardingStep1() {
       }
     }
 
-    if (sessionId || recoveryToken) {
+    if (sessionId) {
       checkPayment()
     } else {
       setIsVerifying(false)
     }
-  }, [sessionId, recoveryToken, router])
+  }, [sessionId, router])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -218,11 +202,8 @@ export default function OnboardingStep1() {
         }),
       )
 
-      // Preserve recovery token when navigating
-      const queryParam = recoveryToken ? `?recovery_token=${recoveryToken}` : ""
-
       // Avançar para a próxima etapa
-      router.push(`/onboarding/step2${queryParam}`)
+      router.push("/onboarding/step2")
     } catch (err) {
       setError("Ocorreu um erro. Por favor, tente novamente.")
     } finally {
@@ -230,13 +211,13 @@ export default function OnboardingStep1() {
     }
   }
 
-  if (isVerifying && (sessionId || recoveryToken)) {
+  if (isVerifying && sessionId) {
     return (
       <OnboardingLayout currentStep={1} totalSteps={3}>
         <Card className="border-none shadow-lg">
           <CardHeader>
-            <CardTitle>Verificando sessão</CardTitle>
-            <CardDescription>Por favor, aguarde enquanto verificamos sua sessão...</CardDescription>
+            <CardTitle>Verificando pagamento</CardTitle>
+            <CardDescription>Por favor, aguarde enquanto verificamos seu pagamento...</CardDescription>
           </CardHeader>
           <CardContent className="flex justify-center py-6">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -247,7 +228,7 @@ export default function OnboardingStep1() {
   }
 
   // Se não houver sessionId e não estiver verificando, verificar se temos dados salvos antes de redirecionar
-  if (!sessionId && !recoveryToken && !isVerifying) {
+  if (!sessionId && !isVerifying) {
     const savedStep1Data = localStorage.getItem("onboarding_step1")
     // Só redireciona para checkout se não tiver dados salvos do step1
     if (!savedStep1Data) {
@@ -265,7 +246,7 @@ export default function OnboardingStep1() {
               ? `Bem-vindo, ${customerInfo.name.split(" ")[0]}! Vamos completar seu cadastro`
               : "Bem-vindo! Vamos completar seu cadastro"}
           </CardTitle>
-          <CardDescription>Preencha seus dados pessoais para começar</CardDescription>
+          {/* Subtítulo removido */}
         </CardHeader>
         <CardContent className="space-y-6">
           {error && (
@@ -275,12 +256,7 @@ export default function OnboardingStep1() {
             </Alert>
           )}
 
-          {recoveryToken && (
-            <Alert variant="default" className="bg-green-50 border-green-200 text-green-800">
-              <AlertCircle className="h-4 w-4 text-green-600" />
-              <AlertDescription>Bem-vindo de volta! Você pode continuar seu cadastro de onde parou.</AlertDescription>
-            </Alert>
-          )}
+          {/* Alerta de pagamento confirmado removido */}
 
           {expirationInfo.date && (
             <Alert variant="default" className="bg-amber-50 border-amber-200 text-amber-800">

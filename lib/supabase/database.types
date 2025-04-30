@@ -45,6 +45,8 @@ export interface Database {
           created_at: string
           updated_at: string
           stripe_session_id?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
         }
         Insert: {
           id?: string
@@ -58,6 +60,8 @@ export interface Database {
           created_at?: string
           updated_at?: string
           stripe_session_id?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
         }
         Update: {
           id?: string
@@ -71,6 +75,8 @@ export interface Database {
           created_at?: string
           updated_at?: string
           stripe_session_id?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
         }
       }
       stripe_sessions: {
@@ -126,143 +132,6 @@ export interface Database {
           used_at?: string
           created_at?: string
           expires_at?: string | null
-        }
-      }
-      onboarding_sessions: {
-        Row: {
-          id: string
-          stripe_session_id: string | null
-          current_step: number
-          data: Json
-          email: string | null
-          last_activity: string
-          created_at: string
-          completed: boolean
-          abandoned: boolean
-          recovery_emails_sent: number
-          last_recovery_email: string | null
-          recovery_token: string | null
-        }
-        Insert: {
-          id?: string
-          stripe_session_id?: string | null
-          current_step: number
-          data: Json
-          email?: string | null
-          last_activity: string
-          created_at: string
-          completed?: boolean
-          abandoned?: boolean
-          recovery_emails_sent?: number
-          last_recovery_email?: string | null
-          recovery_token?: string | null
-        }
-        Update: {
-          id?: string
-          stripe_session_id?: string | null
-          current_step?: number
-          data?: Json
-          email?: string | null
-          last_activity?: string
-          created_at?: string
-          completed?: boolean
-          abandoned?: boolean
-          recovery_emails_sent?: number
-          last_recovery_email?: string | null
-          recovery_token?: string | null
-        }
-      }
-      recovery_email_logs: {
-        Row: {
-          id: string
-          onboarding_session_id: string
-          email: string
-          sent_at: string
-          email_type: string
-          status: string
-          resend_id: string | null
-        }
-        Insert: {
-          id?: string
-          onboarding_session_id: string
-          email: string
-          sent_at?: string
-          email_type: string
-          status?: string
-          resend_id?: string | null
-        }
-        Update: {
-          id?: string
-          onboarding_session_id?: string
-          email?: string
-          sent_at?: string
-          email_type?: string
-          status?: string
-          resend_id?: string | null
-        }
-      }
-      admin_users: {
-        Row: {
-          id: string
-          email: string
-          name: string
-          role: string
-          created_at: string
-          last_login: string | null
-          is_active: boolean
-        }
-        Insert: {
-          id: string
-          email: string
-          name: string
-          role: string
-          created_at?: string
-          last_login?: string | null
-          is_active?: boolean
-        }
-        Update: {
-          id?: string
-          email?: string
-          name?: string
-          role?: string
-          created_at?: string
-          last_login?: string | null
-          is_active?: boolean
-        }
-      }
-      admin_activity_logs: {
-        Row: {
-          id: string
-          admin_id: string
-          action: string
-          entity_type: string
-          entity_id: string | null
-          details: Json | null
-          ip_address: string | null
-          user_agent: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          admin_id: string
-          action: string
-          entity_type: string
-          entity_id?: string | null
-          details?: Json | null
-          ip_address?: string | null
-          user_agent?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          admin_id?: string
-          action?: string
-          entity_type?: string
-          entity_id?: string | null
-          details?: Json | null
-          ip_address?: string | null
-          user_agent?: string | null
-          created_at?: string
         }
       }
     }
