@@ -15,7 +15,6 @@ import { formatCNPJ, cleanFormat, validateCNPJ } from "@/lib/utils/format"
 import { verifyPayment } from "@/lib/payment-verification"
 import { format, formatDistance } from "date-fns"
 import { ptBR } from "date-fns/locale"
-import { getSupabaseClient } from "@/lib/supabase/client"
 
 export default function OnboardingStep1() {
   const [formData, setFormData] = useState({
@@ -44,20 +43,6 @@ export default function OnboardingStep1() {
   const sessionId = searchParams.get("session_id")
 
   useEffect(() => {
-    // Carregar dados salvos do step1 se existirem
-    const savedStep1Data = localStorage.getItem("onboarding_step1")
-    if (savedStep1Data) {
-      try {
-        const parsedData = JSON.parse(savedStep1Data)
-        setFormData({
-          fullName: parsedData.fullName || "",
-          cnpj: parsedData.cnpj ? formatCNPJ(parsedData.cnpj) : "",
-        })
-      } catch (e) {
-        console.error("Erro ao carregar dados salvos do step1:", e)
-      }
-    }
-
     const checkPayment = async () => {
       if (!sessionId) {
         setError("Sessão de pagamento não encontrada. Por favor, realize o pagamento primeiro.")
@@ -179,20 +164,6 @@ export default function OnboardingStep1() {
         return
       }
 
-      // Verificar se o CNPJ já existe no banco de dados
-      const supabase = getSupabaseClient()
-      const { data: existingCNPJ, error: cnpjCheckError } = await supabase
-        .from("profiles")
-        .select("cnpj")
-        .eq("cnpj", cleanedCNPJ)
-        .maybeSingle()
-
-      if (existingCNPJ) {
-        setError("Este CNPJ já está cadastrado. Por favor, informe um CNPJ diferente.")
-        setIsLoading(false)
-        return
-      }
-
       // Armazenar dados no localStorage para usar nas próximas etapas
       localStorage.setItem(
         "onboarding_step1",
@@ -227,14 +198,10 @@ export default function OnboardingStep1() {
     )
   }
 
-  // Se não houver sessionId e não estiver verificando, verificar se temos dados salvos antes de redirecionar
+  // Se não houver sessionId e não estiver verificando, redirecionar para checkout
   if (!sessionId && !isVerifying) {
-    const savedStep1Data = localStorage.getItem("onboarding_step1")
-    // Só redireciona para checkout se não tiver dados salvos do step1
-    if (!savedStep1Data) {
-      router.push("/checkout")
-      return null
-    }
+    router.push("/checkout")
+    return null
   }
 
   return (

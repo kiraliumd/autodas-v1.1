@@ -27,34 +27,10 @@ export default function OnboardingStep2() {
   useEffect(() => {
     // Verificar se o usuário completou a etapa 1
     const step1Data = localStorage.getItem("onboarding_step1")
-
-    // Não redirecionamos mais automaticamente, apenas carregamos os dados se existirem
-    if (step1Data) {
-      // Carregar dados salvos do step2 se existirem
-      const savedStep2Data = localStorage.getItem("onboarding_step2")
-      if (savedStep2Data) {
-        try {
-          const parsedData = JSON.parse(savedStep2Data)
-          setFormData(parsedData)
-        } catch (e) {
-          console.error("Erro ao carregar dados salvos do step2:", e)
-        }
-      }
+    if (!step1Data) {
+      router.push("/onboarding/step1")
     }
-  }, [])
-
-  useEffect(() => {
-    // Carregar dados salvos do step2 se existirem
-    const savedStep2Data = localStorage.getItem("onboarding_step2")
-    if (savedStep2Data) {
-      try {
-        const parsedData = JSON.parse(savedStep2Data)
-        setFormData(parsedData)
-      } catch (e) {
-        console.error("Erro ao carregar dados salvos do step2:", e)
-      }
-    }
-  }, [])
+  }, [router])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -193,18 +169,7 @@ export default function OnboardingStep2() {
           </form>
         </CardContent>
         <CardFooter className="flex justify-between">
-          <Button
-            variant="outline"
-            onClick={() => {
-              // Preservar o session_id ao voltar para o step1
-              const sessionId = localStorage.getItem("stripe_session_id")
-              if (sessionId) {
-                router.push(`/onboarding/step1?session_id=${sessionId}`)
-              } else {
-                router.push("/onboarding/step1")
-              }
-            }}
-          >
+          <Button variant="outline" onClick={() => router.push("/onboarding/step1")}>
             Voltar
           </Button>
           <Button type="submit" form="step2-form" disabled={isLoading}>

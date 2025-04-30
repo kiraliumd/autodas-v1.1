@@ -129,9 +129,6 @@ export default function OnboardingStep3() {
       if (authError) {
         console.error("Erro ao criar usuário:", authError)
         console.log(`Erro ao criar usuário: ${authError.message}`)
-
-        // Verificar se é um erro de CNPJ duplicado
-
         throw new Error(authError.message)
       }
 
@@ -158,12 +155,6 @@ export default function OnboardingStep3() {
       if (profileError) {
         console.error("Erro ao atualizar perfil:", profileError)
         console.log(`Erro ao atualizar perfil: ${profileError.message}`)
-
-        // Verificar se é um erro de CNPJ duplicado
-        if (authError?.message?.includes("profiles_cnpj_key") || profileError.message?.includes("profiles_cnpj_key")) {
-          throw new Error("Este CNPJ já está cadastrado. Por favor, informe um CNPJ diferente.")
-        }
-
         throw new Error(profileError.message)
       }
 
