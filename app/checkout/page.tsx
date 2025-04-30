@@ -6,7 +6,7 @@ import { CheckoutHeader } from "@/components/checkout-header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Check, AlertCircle, Lock } from "lucide-react"
+import { AlertCircle, Lock } from "lucide-react"
 import { getStripe } from "@/lib/stripe"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
@@ -94,20 +94,6 @@ export default function CheckoutPage() {
                   <span className="text-3xl font-bold">R$ {price.toFixed(2).replace(".", ",")}</span>
                   <span className="text-muted-foreground line-through ml-2">R$ 79,90</span>
                   <span className="text-sm text-muted-foreground ml-2">/ano</span>
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="font-medium">O que está incluso:</h3>
-                  <ul className="space-y-3">
-                    {["Guia enviada todo mês via WhatsApp", "Código de segurança incluso", "Acesso por 12 meses"].map(
-                      (item, i) => (
-                        <li key={i} className="flex items-start">
-                          <Check className="h-5 w-5 text-primary shrink-0 mr-2" />
-                          <span>{item}</span>
-                        </li>
-                      ),
-                    )}
-                  </ul>
                 </div>
               </CardContent>
             </Card>
