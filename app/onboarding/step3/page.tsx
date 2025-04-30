@@ -31,6 +31,7 @@ export default function OnboardingStep3() {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
+  // Estado de debug removido, usando apenas console.log
   const router = useRouter()
   const supabase = getSupabaseClient()
 
@@ -205,7 +206,6 @@ export default function OnboardingStep3() {
       // 7. Limpar dados do localStorage
       localStorage.removeItem("onboarding_step1")
       localStorage.removeItem("onboarding_step2")
-      localStorage.removeItem("onboarding_step2_draft")
       localStorage.removeItem("stripe_session_id")
       localStorage.removeItem("stripe_session_metadata")
 
@@ -222,10 +222,6 @@ export default function OnboardingStep3() {
     } finally {
       setIsLoading(false)
     }
-  }
-
-  const handleBack = () => {
-    router.push("/onboarding/step2")
   }
 
   if (!step1Data || !step2Data) {
@@ -263,6 +259,8 @@ export default function OnboardingStep3() {
               </AlertDescription>
             </Alert>
           )}
+
+          {/* Debug info removido */}
 
           <div className="rounded-lg border p-4 space-y-4">
             <div>
@@ -305,7 +303,7 @@ export default function OnboardingStep3() {
           </div>
         </CardContent>
         <CardFooter className="flex justify-between">
-          <Button variant="outline" onClick={handleBack} disabled={isLoading || isSuccess}>
+          <Button variant="outline" onClick={() => router.push("/onboarding/step2")} disabled={isLoading || isSuccess}>
             Voltar
           </Button>
           <Button onClick={handleSubmit} disabled={isLoading || isSuccess}>

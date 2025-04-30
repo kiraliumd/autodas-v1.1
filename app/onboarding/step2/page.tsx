@@ -95,36 +95,6 @@ export default function OnboardingStep2() {
     }
   }
 
-  const handleBack = () => {
-    // Preservar os dados do formulário no localStorage antes de voltar
-    if (formData.email.trim() || formData.password.trim() || formData.whatsapp.trim() || formData.securityCode.trim()) {
-      localStorage.setItem(
-        "onboarding_step2_draft",
-        JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-          whatsapp: formData.whatsapp,
-          securityCode: formData.securityCode,
-        }),
-      )
-    }
-
-    router.push("/onboarding/step1")
-  }
-
-  // Carregar rascunho salvo, se existir
-  useEffect(() => {
-    const savedDraft = localStorage.getItem("onboarding_step2_draft")
-    if (savedDraft) {
-      try {
-        const parsedDraft = JSON.parse(savedDraft)
-        setFormData(parsedDraft)
-      } catch (e) {
-        console.error("Erro ao carregar rascunho:", e)
-      }
-    }
-  }, [])
-
   return (
     <OnboardingLayout currentStep={2} totalSteps={3}>
       <Card className="border-none shadow-lg">
@@ -199,7 +169,7 @@ export default function OnboardingStep2() {
           </form>
         </CardContent>
         <CardFooter className="flex justify-between">
-          <Button variant="outline" onClick={handleBack}>
+          <Button variant="outline" onClick={() => router.push("/onboarding/step1")}>
             Voltar
           </Button>
           <Button type="submit" form="step2-form" disabled={isLoading}>

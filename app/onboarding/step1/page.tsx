@@ -51,8 +51,6 @@ export default function OnboardingStep1() {
       }
 
       try {
-        console.log(`Verificando pagamento para sessão: ${sessionId}`)
-
         // Usar a função centralizada de verificação
         const verificationResult = await verifyPayment(sessionId)
 
@@ -64,7 +62,6 @@ export default function OnboardingStep1() {
             setError(verificationResult.error || "Pagamento não confirmado. Por favor, realize o pagamento primeiro.")
           }
 
-          // Redirecionar para checkout após 3 segundos
           setTimeout(() => {
             router.push("/checkout")
           }, 3000)
@@ -124,13 +121,8 @@ export default function OnboardingStep1() {
         setIsVerifying(false)
       } catch (err) {
         console.error("Erro ao verificar pagamento:", err)
-        setError("Erro ao verificar pagamento. Por favor, tente novamente mais tarde.")
+        setError("Erro ao verificar pagamento. Por favor, tente novamente.")
         setIsVerifying(false)
-
-        // Redirecionar para checkout após 3 segundos
-        setTimeout(() => {
-          router.push("/checkout")
-        }, 3000)
       }
     }
 
@@ -221,7 +213,7 @@ export default function OnboardingStep1() {
               ? `Bem-vindo, ${customerInfo.name.split(" ")[0]}! Vamos completar seu cadastro`
               : "Bem-vindo! Vamos completar seu cadastro"}
           </CardTitle>
-          <CardDescription>Preencha seus dados pessoais para continuar</CardDescription>
+          {/* Subtítulo removido */}
         </CardHeader>
         <CardContent className="space-y-6">
           {error && (
@@ -230,6 +222,8 @@ export default function OnboardingStep1() {
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
+
+          {/* Alerta de pagamento confirmado removido */}
 
           {expirationInfo.date && (
             <Alert variant="default" className="bg-amber-50 border-amber-200 text-amber-800">

@@ -141,7 +141,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">Visão Geral</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Visão Geral</h1>
         <p className="text-muted-foreground mt-2">
           Bem-vindo ao seu painel de controle do Autodas, {profile?.full_name?.split(" ")[0] || "usuário"}.
         </p>
@@ -156,7 +156,7 @@ export default function DashboardPage() {
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-2xl font-bold text-foreground">{subscription ? "Anual" : "Sem plano"}</div>
+                <div className="text-2xl font-bold">{subscription ? "Anual" : "Sem plano"}</div>
                 <p className="text-xs text-muted-foreground mt-1">
                   {subscription ? `Válido até ${formattedEndDate}` : "Nenhuma assinatura ativa"}
                 </p>
@@ -187,7 +187,7 @@ export default function DashboardPage() {
             <MessageCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-foreground">{formattedWhatsApp || "Não cadastrado"}</div>
+            <div className="text-2xl font-bold">{formattedWhatsApp || "Não cadastrado"}</div>
             <p className="text-xs text-muted-foreground mt-1">Número cadastrado para receber a Guia DAS</p>
           </CardContent>
         </Card>
@@ -198,7 +198,7 @@ export default function DashboardPage() {
             <ShieldCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-foreground">{profile?.security_code || "Não definido"}</div>
+            <div className="text-2xl font-bold">{profile?.security_code || "Não definido"}</div>
             <p className="text-xs text-muted-foreground mt-1">Código para verificação de guias recebidas</p>
             <div className="mt-4 flex items-center text-sm text-amber-600">
               <AlertCircle className="mr-1 h-4 w-4" />
@@ -232,7 +232,7 @@ export default function DashboardPage() {
             </svg>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-foreground">{formattedCNPJ || "Não cadastrado"}</div>
+            <div className="text-2xl font-bold">{formattedCNPJ || "Não cadastrado"}</div>
             <p className="text-xs text-muted-foreground mt-1">CNPJ utilizado para emissão da guia DAS</p>
           </CardContent>
         </Card>

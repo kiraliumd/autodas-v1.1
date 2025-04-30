@@ -54,15 +54,6 @@ export function isExpired(expirationDate: string | null | undefined): boolean {
 }
 
 /**
- * Verifica se uma sessão é uma sessão de teste do Stripe
- * @param sessionId ID da sessão do Stripe
- * @returns true se for uma sessão de teste, false caso contrário
- */
-export function isTestSession(sessionId: string): boolean {
-  return sessionId.startsWith("cs_test_")
-}
-
-/**
  * Verifica o status de pagamento de uma sessão do Stripe
  * @param sessionId ID da sessão do Stripe
  * @returns Resultado da verificação
@@ -79,10 +70,7 @@ export async function verifyPayment(sessionId: string): Promise<PaymentVerificat
   }
 
   try {
-    // Verificar se é uma sessão de teste
-    const isTest = isTestSession(sessionId)
-
-    // Verificar no banco de dados primeiro
+    // Verificar primeiro no banco de dados local
     const supabase = createClientComponentClient<Database>()
 
     // Verificar se a sessão já foi utilizada
@@ -104,23 +92,22 @@ export async function verifyPayment(sessionId: string): Promise<PaymentVerificat
     }
 
     // Verificar se a sessão existe no banco de dados
-    const { data: existingSession, error: dbError } = await supabase
+    const { data: sessionData, error: dbError } = await supabase
       .from("stripe_sessions")
       .select("*")
       .eq("session_id", sessionId)
       .single()
 
     // Se encontrou no banco de dados, verificar se não expirou
-    if (!dbError && existingSession) {
-      // Verificar se a sessão expirou
-      if (isExpired(existingSession.expires_at)) {
+    if (sessionData && !dbError) {
+      if (isExpired(sessionData.expires_at)) {
         return {
           success: false,
           sessionId,
           verified: false,
           metadata: null,
           error: "Esta sessão de pagamento expirou",
-          expiresAt: existingSession.expires_at,
+          expiresAt: sessionData.expires_at,
         }
       }
 
@@ -128,8 +115,8 @@ export async function verifyPayment(sessionId: string): Promise<PaymentVerificat
         success: true,
         sessionId,
         verified: true,
-        metadata: existingSession.metadata || null,
-        expiresAt: existingSession.expires_at,
+        metadata: sessionData.metadata || null,
+        expiresAt: sessionData.expires_at,
       }
     }
 
@@ -139,7 +126,7 @@ export async function verifyPayment(sessionId: string): Promise<PaymentVerificat
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ sessionId, isTest }),
+      body: JSON.stringify({ sessionId }),
     })
 
     const data = await response.json()

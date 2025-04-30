@@ -27,10 +27,10 @@ export function HowItWorks() {
     <section className="py-12 md:py-16 lg:py-20 bg-white" id="how-it-works">
       <div className="container mx-auto max-w-[1120px] px-4 sm:px-6">
         <div className="text-center max-w-3xl mx-auto mb-10 md:mb-16 animate-fade-in">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-foreground">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-gray-900">
             Como o Autodas facilita sua vida
           </h2>
-          <p className="mt-3 md:mt-4 text-base sm:text-lg md:text-xl text-muted-foreground">
+          <p className="mt-3 md:mt-4 text-base sm:text-lg md:text-xl text-gray-700">
             Deixa que a gente emite a guia. Você só precisa pagar. Simples assim.
           </p>
         </div>
@@ -47,8 +47,8 @@ export function HowItWorks() {
                 <div className="w-14 h-14 md:w-16 md:h-16 bg-primary/20 rounded-full flex items-center justify-center mb-4">
                   <Icon className="h-7 w-7 md:h-8 md:w-8 text-primary" />
                 </div>
-                <h3 className="text-lg md:text-xl font-semibold text-foreground mb-2 md:mb-3">{feature.title}</h3>
-                <p className="text-sm md:text-base text-muted-foreground">{feature.description}</p>
+                <h3 className="text-lg md:text-xl font-semibold text-gray-900 mb-2 md:mb-3">{feature.title}</h3>
+                <p className="text-sm md:text-base text-gray-700">{feature.description}</p>
               </div>
             )
           })}
