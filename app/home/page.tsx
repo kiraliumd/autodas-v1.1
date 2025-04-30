@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     description: "Com o Autodas, sua guia DAS MEI chega automaticamente no WhatsApp todo mês. Experimente agora!",
     images: [
       {
-        url: "/images/autodas-og-image.jpg",
+        url: "https://iytu5oqsloncu0k0.public.blob.vercel-storage.com/uploads/1745985063724-autodas-notify-zap--1--OIg5voB7y4lSoHo4EBVc00bwywIIU6.png",
         width: 1200,
         height: 630,
         alt: "Autodas - Plataforma para MEI",
