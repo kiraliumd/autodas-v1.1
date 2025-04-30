@@ -30,6 +30,17 @@ export default function OnboardingStep2() {
     if (!step1Data) {
       router.push("/onboarding/step1")
     }
+
+    // Carregar rascunho salvo, se existir
+    const savedDraft = localStorage.getItem("onboarding_step2_draft")
+    if (savedDraft) {
+      try {
+        const parsedDraft = JSON.parse(savedDraft)
+        setFormData(parsedDraft)
+      } catch (e) {
+        console.error("Erro ao carregar rascunho:", e)
+      }
+    }
   }, [router])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -93,6 +104,23 @@ export default function OnboardingStep2() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleBack = () => {
+    // Preservar os dados do formulário no localStorage antes de voltar
+    if (formData.email.trim() || formData.password.trim() || formData.whatsapp.trim() || formData.securityCode.trim()) {
+      localStorage.setItem(
+        "onboarding_step2_draft",
+        JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          whatsapp: formData.whatsapp,
+          securityCode: formData.securityCode,
+        }),
+      )
+    }
+
+    router.push("/onboarding/step1")
   }
 
   return (
@@ -169,7 +197,7 @@ export default function OnboardingStep2() {
           </form>
         </CardContent>
         <CardFooter className="flex justify-between">
-          <Button variant="outline" onClick={() => router.push("/onboarding/step1")}>
+          <Button variant="outline" onClick={handleBack}>
             Voltar
           </Button>
           <Button type="submit" form="step2-form" disabled={isLoading}>
