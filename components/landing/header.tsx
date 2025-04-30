@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { useState } from "react"
 import { Menu, X } from "lucide-react"
+import { StripeCheckoutButton } from "@/components/stripe-checkout-button"
 
 export function LandingHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -31,11 +32,9 @@ export function LandingHeader() {
               Entrar
             </Button>
           </Link>
-          <Link href="/checkout">
-            <Button className="text-sm font-medium rounded-[8px] px-6 hover:scale-105 transition-transform">
-              Assinar Agora
-            </Button>
-          </Link>
+          <StripeCheckoutButton className="text-sm font-medium rounded-[8px] px-6 hover:scale-105 transition-transform">
+            Assinar Agora
+          </StripeCheckoutButton>
         </div>
 
         {/* Mobile Menu Button */}
@@ -69,9 +68,12 @@ export function LandingHeader() {
             >
               Entrar
             </Link>
-            <Link href="/checkout" onClick={() => setMobileMenuOpen(false)}>
-              <Button className="w-full text-sm font-medium rounded-[8px]">Assinar Agora</Button>
-            </Link>
+            <StripeCheckoutButton
+              className="w-full text-sm font-medium rounded-[8px]"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Assinar Agora
+            </StripeCheckoutButton>
           </nav>
         </div>
       )}

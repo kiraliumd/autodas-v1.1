@@ -1,9 +1,7 @@
 "use client"
-
-import { Button } from "@/components/ui/button"
-import Link from "next/link"
 import { useEffect, useState } from "react"
 import { Clock } from "lucide-react"
+import { StripeCheckoutButton } from "@/components/stripe-checkout-button"
 
 export function FloatingCTA() {
   const [isVisible, setIsVisible] = useState(false)
@@ -36,11 +34,9 @@ export function FloatingCTA() {
             <p className="text-xs text-gray-700 hidden sm:block">Restam apenas 23 vagas com preço promocional</p>
           </div>
         </div>
-        <Link href="/checkout">
-          <Button className="whitespace-nowrap rounded-[8px] hover:scale-105 transition-transform text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2">
-            ASSINE AGORA
-          </Button>
-        </Link>
+        <StripeCheckoutButton className="whitespace-nowrap rounded-[8px] hover:scale-105 transition-transform text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2">
+          ASSINE AGORA
+        </StripeCheckoutButton>
       </div>
     </div>
   )
