@@ -221,7 +221,7 @@ export default function OnboardingStep1() {
               ? `Bem-vindo, ${customerInfo.name.split(" ")[0]}! Vamos completar seu cadastro`
               : "Bem-vindo! Vamos completar seu cadastro"}
           </CardTitle>
-          {/* Subtítulo removido */}
+          <CardDescription>Preencha seus dados pessoais para continuar</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {error && (
@@ -230,8 +230,6 @@ export default function OnboardingStep1() {
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-
-          {/* Alerta de pagamento confirmado removido */}
 
           {expirationInfo.date && (
             <Alert variant="default" className="bg-amber-50 border-amber-200 text-amber-800">
