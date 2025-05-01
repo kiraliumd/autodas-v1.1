@@ -31,7 +31,6 @@ export default function OnboardingStep3() {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
-  // Estado de debug removido, usando apenas console.log
   const router = useRouter()
   const supabase = getSupabaseClient()
 
@@ -224,6 +223,12 @@ export default function OnboardingStep3() {
     }
   }
 
+  // Modificado para redirecionar para o step1, reiniciando o processo
+  const handleBack = () => {
+    // Redirecionar para o step1 para reiniciar o processo
+    router.push("/onboarding/step1")
+  }
+
   if (!step1Data || !step2Data) {
     return (
       <OnboardingLayout currentStep={3} totalSteps={3}>
@@ -259,8 +264,6 @@ export default function OnboardingStep3() {
               </AlertDescription>
             </Alert>
           )}
-
-          {/* Debug info removido */}
 
           <div className="rounded-lg border p-4 space-y-4">
             <div>
@@ -303,8 +306,8 @@ export default function OnboardingStep3() {
           </div>
         </CardContent>
         <CardFooter className="flex justify-between">
-          <Button variant="outline" onClick={() => router.push("/onboarding/step2")} disabled={isLoading || isSuccess}>
-            Voltar
+          <Button variant="outline" onClick={handleBack} disabled={isLoading || isSuccess}>
+            Revisar informações
           </Button>
           <Button onClick={handleSubmit} disabled={isLoading || isSuccess}>
             {isLoading ? "Processando..." : "Finalizar cadastro"}
