@@ -83,10 +83,10 @@ export function CountdownTimer({ targetDate, className }: CountdownTimerProps) {
         {/* Barra de progresso para vagas preenchidas */}
         <div className="h-6 w-full bg-gray-200 rounded-full overflow-hidden relative">
           <div
-            className="h-full bg-primary rounded-full transition-all duration-500 ease-in-out flex items-center justify-end"
+            className="h-full bg-primary rounded-full transition-all duration-500 ease-in-out flex items-center justify-center"
             style={{ width: `${filledPercentage}%` }}
           >
-            <span className="text-xs font-bold text-white pr-2">{filledPercentage}%</span>
+            <span className="text-xs font-bold text-white">{filledPercentage}%</span>
           </div>
         </div>
       </div>

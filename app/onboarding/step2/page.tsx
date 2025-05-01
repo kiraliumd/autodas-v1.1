@@ -29,18 +29,6 @@ export default function OnboardingStep2() {
     const step1Data = localStorage.getItem("onboarding_step1")
     if (!step1Data) {
       router.push("/onboarding/step1")
-      return
-    }
-
-    // Carregar rascunho salvo, se existir
-    const savedDraft = localStorage.getItem("onboarding_step2_draft")
-    if (savedDraft) {
-      try {
-        const parsedDraft = JSON.parse(savedDraft)
-        setFormData(parsedDraft)
-      } catch (e) {
-        console.error("Erro ao carregar rascunho:", e)
-      }
     }
   }, [router])
 
@@ -104,32 +92,6 @@ export default function OnboardingStep2() {
       setError("Ocorreu um erro. Por favor, tente novamente.")
     } finally {
       setIsLoading(false)
-    }
-  }
-
-  const handleBack = () => {
-    // Preservar os dados do formulário no localStorage antes de voltar
-    if (formData.email.trim() || formData.password.trim() || formData.whatsapp.trim() || formData.securityCode.trim()) {
-      localStorage.setItem(
-        "onboarding_step2_draft",
-        JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-          whatsapp: formData.whatsapp,
-          securityCode: formData.securityCode,
-        }),
-      )
-    }
-
-    // Verificar se temos o sessionId no localStorage para garantir que voltamos para o step1 com o ID da sessão
-    const sessionId = localStorage.getItem("stripe_session_id")
-
-    if (sessionId) {
-      // Usar replace para evitar problemas de navegação
-      router.replace(`/onboarding/step1?session_id=${sessionId}`)
-    } else {
-      // Se não tiver sessionId, ainda assim voltar para step1
-      router.replace("/onboarding/step1")
     }
   }
 
@@ -207,7 +169,7 @@ export default function OnboardingStep2() {
           </form>
         </CardContent>
         <CardFooter className="flex justify-between">
-          <Button variant="outline" onClick={handleBack}>
+          <Button variant="outline" onClick={() => router.push("/onboarding/step1")}>
             Voltar
           </Button>
           <Button type="submit" form="step2-form" disabled={isLoading}>

@@ -28,7 +28,7 @@ export function Testimonials() {
     <section className="py-12 md:py-16 lg:py-20 bg-[#FFF8EE]">
       <div className="container mx-auto max-w-[1120px] px-4 sm:px-6">
         <div className="text-center max-w-3xl mx-auto mb-10 md:mb-16 animate-fade-in">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-gray-900">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-foreground">
             O que dizem nossos assinantes
           </h2>
         </div>
@@ -44,7 +44,7 @@ export function Testimonials() {
                   <Star key={i} className="h-4 w-4 md:h-5 md:w-5 text-yellow-500 fill-yellow-500" />
                 ))}
               </div>
-              <p className="text-sm md:text-base text-gray-800 mb-4 md:mb-6">"{testimonial.content}"</p>
+              <p className="text-sm md:text-base text-foreground mb-4 md:mb-6">"{testimonial.content}"</p>
               <div className="flex items-center">
                 <div className="w-8 h-8 md:w-10 md:h-10 bg-gray-200 rounded-full overflow-hidden mr-3">
                   <Image
@@ -56,7 +56,7 @@ export function Testimonials() {
                   />
                 </div>
                 <div>
-                  <p className="font-medium text-sm md:text-base text-gray-900">{testimonial.author}</p>
+                  <p className="font-medium text-sm md:text-base text-foreground">{testimonial.author}</p>
                   <p className="text-xs md:text-sm text-gray-700">{testimonial.role}</p>
                 </div>
               </div>

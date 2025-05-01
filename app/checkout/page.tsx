@@ -71,7 +71,7 @@ export default function CheckoutPage() {
         <div className="grid gap-8 md:grid-cols-[1fr_400px]">
           <div className="space-y-6">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Assine o Autodas</h1>
+              <h1 className="text-3xl font-bold tracking-tight text-foreground">Assine o Autodas</h1>
               <p className="text-muted-foreground mt-2">
                 Simplifique a gestão do seu MEI com nossa plataforma completa.
               </p>
