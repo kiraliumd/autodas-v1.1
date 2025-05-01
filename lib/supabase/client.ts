@@ -8,10 +8,7 @@ let supabaseClient: ReturnType<typeof createClientComponentClient<Database>> | n
 
 export const getSupabaseClient = () => {
   if (!supabaseClient) {
-    supabaseClient = createClientComponentClient<Database>({
-      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
-      supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    })
+    supabaseClient = createClientComponentClient<Database>()
   }
   return supabaseClient
 }
