@@ -30,7 +30,6 @@ export default function OnboardingStep3() {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
-  const [debugInfo, setDebugInfo] = useState<any>(null)
   const router = useRouter()
   const supabase = getSupabaseClient()
 
@@ -64,28 +63,7 @@ export default function OnboardingStep3() {
     } else {
       console.warn("Nenhum ID de sessão do Stripe encontrado no localStorage")
     }
-
-    // Verificar conexão com o Supabase
-    testSupabaseConnection()
   }, [router])
-
-  // Testar conexão com o Supabase
-  const testSupabaseConnection = async () => {
-    try {
-      const { data, error } = await supabase.from("profiles").select("count").limit(1)
-
-      if (error) {
-        console.error("Erro ao conectar com o Supabase:", error)
-        setDebugInfo((prev) => ({ ...prev, connectionTest: "Falha", error: error.message }))
-      } else {
-        console.log("Conexão com o Supabase bem-sucedida")
-        setDebugInfo((prev) => ({ ...prev, connectionTest: "Sucesso" }))
-      }
-    } catch (err) {
-      console.error("Exceção ao testar conexão:", err)
-      setDebugInfo((prev) => ({ ...prev, connectionTest: "Exceção", error: String(err) }))
-    }
-  }
 
   const handleSubmit = async () => {
     if (!step1Data || !step2Data) {
@@ -95,28 +73,10 @@ export default function OnboardingStep3() {
 
     setIsLoading(true)
     setError(null)
-    setDebugInfo(null)
 
     try {
-      // Testar conexão novamente antes de prosseguir
-      try {
-        const { data, error } = await supabase.from("profiles").select("count").limit(1)
-        if (error) {
-          throw new Error(`Erro de conexão com o banco de dados: ${error.message}`)
-        }
-        console.log("Conexão com o banco de dados verificada com sucesso")
-      } catch (connError) {
-        console.error("Erro ao verificar conexão:", connError)
-        throw new Error("Não foi possível conectar ao banco de dados. Por favor, tente novamente mais tarde.")
-      }
-
-      const paymentVerified = true // Simplificando para focar no problema de banco de dados
-      const verificationResult = null
-
-      // 2. Criar usuário no Supabase Auth - Abordagem direta
+      // 1. Criar usuário no Supabase Auth - Versão simplificada como na v76
       console.log("Criando usuário:", step2Data.email)
-
-      // Usar signUp com opções mínimas para reduzir chance de erros
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: step2Data.email,
         password: step2Data.password,
@@ -134,21 +94,12 @@ export default function OnboardingStep3() {
 
       console.log(`Usuário criado com ID: ${authData.user.id}`)
 
-      // Armazenar informações de debug
-      setDebugInfo({
-        userId: authData.user.id,
-        email: authData.user.email,
-        createdAt: new Date().toISOString(),
-      })
+      // 2. Aguardar um momento para garantir que o usuário foi criado no banco
+      await new Promise((resolve) => setTimeout(resolve, 1000))
 
-      // Aguardar um momento para garantir que o usuário foi criado no banco
-      await new Promise((resolve) => setTimeout(resolve, 2000))
-
-      // 4. Criar perfil manualmente para garantir que existe
+      // 3. Criar perfil
       console.log("Criando perfil para usuário:", authData.user.id)
-
-      // Inserir novo perfil - abordagem simplificada
-      const profileData = {
+      const { error: profileError } = await supabase.from("profiles").insert({
         id: authData.user.id,
         full_name: step1Data.fullName,
         cnpj: step1Data.cnpj,
@@ -156,19 +107,16 @@ export default function OnboardingStep3() {
         security_code: step2Data.securityCode,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-      }
-
-      const { error: profileError } = await supabase.from("profiles").insert(profileData)
+      })
 
       if (profileError) {
         console.error("Erro ao criar perfil:", profileError)
-        setDebugInfo((prev) => ({ ...prev, profileError: profileError.message }))
         throw new Error(`Erro ao criar perfil: ${profileError.message}`)
       }
 
       console.log("Perfil criado com sucesso")
 
-      // 6. Criar assinatura
+      // 4. Criar assinatura
       const startDate = new Date()
       const endDate = addYears(startDate, 1)
 
@@ -177,7 +125,7 @@ export default function OnboardingStep3() {
       const planType = "annual"
 
       console.log("Criando assinatura para usuário:", authData.user.id)
-      const subscriptionData = {
+      const { error: subscriptionError } = await supabase.from("subscriptions").insert({
         user_id: authData.user.id,
         status: "active",
         plan_type: planType,
@@ -188,32 +136,29 @@ export default function OnboardingStep3() {
         stripe_session_id: stripeSessionId || null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-      }
-
-      const { error: subscriptionError } = await supabase.from("subscriptions").insert(subscriptionData)
+      })
 
       if (subscriptionError) {
         console.error("Erro ao criar assinatura:", subscriptionError)
-        setDebugInfo((prev) => ({ ...prev, subscriptionError: subscriptionError.message }))
         throw new Error(`Erro ao criar assinatura: ${subscriptionError.message}`)
       }
 
       console.log("Assinatura criada com sucesso")
 
-      // 7. Fazer logout para que o usuário faça login manualmente
+      // 5. Fazer logout para que o usuário faça login manualmente
       await supabase.auth.signOut()
 
-      // 8. Limpar dados do localStorage
+      // 6. Limpar dados do localStorage
       localStorage.removeItem("onboarding_step1")
       localStorage.removeItem("onboarding_step2")
       localStorage.removeItem("onboarding_step2_draft")
       localStorage.removeItem("stripe_session_id")
       localStorage.removeItem("stripe_session_metadata")
 
-      // 9. Mostrar mensagem de sucesso
+      // 7. Mostrar mensagem de sucesso
       setIsSuccess(true)
 
-      // 10. Redirecionar para login após 3 segundos
+      // 8. Redirecionar para login após 3 segundos
       setTimeout(() => {
         router.push("/login")
       }, 3000)
@@ -228,7 +173,6 @@ export default function OnboardingStep3() {
   }
 
   const handleBack = () => {
-    // Usar replace para evitar problemas de navegação
     router.replace("/onboarding/step2")
   }
 
@@ -266,12 +210,6 @@ export default function OnboardingStep3() {
                 Cadastro realizado com sucesso! Você será redirecionado para a página de login em instantes.
               </AlertDescription>
             </Alert>
-          )}
-
-          {debugInfo && (
-            <div className="bg-gray-50 p-3 rounded text-xs font-mono overflow-auto max-h-32">
-              <pre>{JSON.stringify(debugInfo, null, 2)}</pre>
-            </div>
           )}
 
           <div className="rounded-lg border p-4 space-y-4">
