@@ -5,7 +5,11 @@ import { useRouter } from "next/navigation"
 import { OnboardingLayout } from "@/components/onboarding-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { AlertCircle, CheckCircle } from "lucide-react"
 import { getSupabaseClient } from "@/lib/supabase/client"
+import { addYears } from "date-fns"
+import { verifyPayment, markSessionAsUsed } from "@/lib/payment-verification"
 
 interface Step1Data {
   fullName: string
@@ -80,11 +84,203 @@ export default function OnboardingStep3() {
   }
 
   const handleSubmit = async () => {
-    // Código de submissão omitido para brevidade
+    if (!step1Data || !step2Data) {
+      setError("Dados incompletos. Por favor, volte e preencha todas as etapas.")
+      return
+    }
+
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      // Verificar se o email já está em uso
+      const emailExists = await checkEmailExists(step2Data.email)
+      if (emailExists) {
+        throw new Error("Este email já está em uso. Por favor, use outro email ou faça login.")
+      }
+
+      let paymentVerified = false
+      let verificationResult = null
+
+      // 1. Verificar a sessão do Stripe se houver um ID
+      if (stripeSessionId) {
+        try {
+          console.log("Verificando pagamento para sessão:", stripeSessionId)
+
+          // Usar a função centralizada de verificação
+          verificationResult = await verifyPayment(stripeSessionId)
+
+          if (verificationResult.success && verificationResult.verified) {
+            paymentVerified = true
+            console.log("Pagamento verificado com sucesso")
+          } else {
+            console.log(`Erro na verificação: ${verificationResult.error}`)
+            throw new Error(verificationResult.error || "Erro ao verificar pagamento")
+          }
+        } catch (verifyError) {
+          console.error("Erro ao verificar pagamento:", verifyError)
+          // Em produção, não devemos continuar se a verificação falhar
+          // Mas para desenvolvimento, permitimos continuar
+          if (process.env.NODE_ENV === "development") {
+            console.warn("Continuando sem verificação de pagamento (modo de desenvolvimento)")
+            paymentVerified = true
+          } else {
+            throw verifyError
+          }
+        }
+      } else {
+        // Para desenvolvimento, permitir continuar mesmo sem ID de sessão
+        if (process.env.NODE_ENV === "development") {
+          console.warn(
+            "Nenhum ID de sessão do Stripe encontrado, prosseguindo sem verificação (modo de desenvolvimento)",
+          )
+          paymentVerified = true
+        } else {
+          throw new Error("ID de sessão de pagamento não encontrado")
+        }
+      }
+
+      if (!paymentVerified) {
+        throw new Error("Não foi possível verificar o pagamento. Por favor, tente novamente.")
+      }
+
+      // 2. Criar usuário no Supabase Auth - Simplificado para reduzir erros
+      console.log("Criando usuário:", step2Data.email)
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: step2Data.email,
+        password: step2Data.password,
+      })
+
+      if (authError) {
+        console.error("Erro ao criar usuário:", authError)
+
+        // Tratamento específico para erros comuns
+        if (authError.message.includes("already registered")) {
+          throw new Error("Este email já está registrado. Por favor, faça login ou use outro email.")
+        } else if (authError.message.includes("password")) {
+          throw new Error("Senha inválida. A senha deve ter pelo menos 6 caracteres.")
+        } else {
+          throw new Error(`Erro ao criar usuário: ${authError.message}`)
+        }
+      }
+
+      if (!authData.user) {
+        console.error("Usuário não criado")
+        throw new Error("Erro ao criar usuário: nenhum usuário retornado")
+      }
+
+      console.log(`Usuário criado com ID: ${authData.user.id}`)
+
+      // Aguardar um momento para garantir que o usuário foi criado no banco
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      // 3. Atualizar metadados do usuário
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: {
+          full_name: step1Data.fullName,
+        },
+      })
+
+      if (updateError) {
+        console.error("Erro ao atualizar metadados do usuário:", updateError)
+        // Não interromper o fluxo por causa deste erro
+      }
+
+      // 4. Criar ou atualizar perfil
+      console.log("Criando perfil para usuário:", authData.user.id)
+      const { error: profileError } = await supabase.from("profiles").upsert(
+        {
+          id: authData.user.id,
+          full_name: step1Data.fullName,
+          cnpj: step1Data.cnpj,
+          whatsapp: step2Data.whatsapp,
+          security_code: step2Data.securityCode,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "id" },
+      )
+
+      if (profileError) {
+        console.error("Erro ao criar/atualizar perfil:", profileError)
+        throw new Error(`Erro ao criar perfil: ${profileError.message}`)
+      }
+
+      console.log("Perfil criado/atualizado com sucesso")
+
+      // 5. Marcar a sessão como utilizada para evitar duplicações
+      if (stripeSessionId) {
+        try {
+          const sessionMarked = await markSessionAsUsed(stripeSessionId, authData.user.id)
+          if (sessionMarked) {
+            console.log("Sessão marcada como utilizada com sucesso")
+          } else {
+            console.warn("Não foi possível marcar a sessão como utilizada ou ela já foi utilizada anteriormente")
+          }
+        } catch (markError) {
+          console.error("Erro ao marcar sessão como utilizada:", markError)
+          // Não interromper o fluxo por causa deste erro
+        }
+      }
+
+      // 6. Criar assinatura
+      const startDate = new Date()
+      const endDate = addYears(startDate, 1)
+
+      // Usar metadados da sessão se disponíveis, ou valores padrão
+      const price = sessionMetadata?.price || verificationResult?.metadata?.price || 47.9
+      const planType = sessionMetadata?.planType || verificationResult?.metadata?.planType || "annual"
+
+      console.log("Criando assinatura para usuário:", authData.user.id)
+      const { error: subscriptionError } = await supabase.from("subscriptions").insert({
+        user_id: authData.user.id,
+        status: "active",
+        plan_type: planType,
+        price: price,
+        start_date: startDate.toISOString(),
+        end_date: endDate.toISOString(),
+        auto_renew: true,
+        stripe_session_id: stripeSessionId || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+
+      if (subscriptionError) {
+        console.error("Erro ao criar assinatura:", subscriptionError)
+        throw new Error(`Erro ao criar assinatura: ${subscriptionError.message}`)
+      }
+
+      console.log("Assinatura criada com sucesso")
+
+      // 7. Fazer logout para que o usuário faça login manualmente
+      await supabase.auth.signOut()
+
+      // 8. Limpar dados do localStorage
+      localStorage.removeItem("onboarding_step1")
+      localStorage.removeItem("onboarding_step2")
+      localStorage.removeItem("onboarding_step2_draft")
+      localStorage.removeItem("stripe_session_id")
+      localStorage.removeItem("stripe_session_metadata")
+
+      // 9. Mostrar mensagem de sucesso
+      setIsSuccess(true)
+
+      // 10. Redirecionar para login após 3 segundos
+      setTimeout(() => {
+        router.push("/login")
+      }, 3000)
+    } catch (err) {
+      console.error("Erro ao finalizar cadastro:", err)
+      setError(
+        err instanceof Error ? err.message : "Ocorreu um erro ao finalizar seu cadastro. Por favor, tente novamente.",
+      )
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleBack = () => {
-    router.push("/onboarding/step2")
+    // Usar replace para evitar problemas de navegação
+    router.replace("/onboarding/step2")
   }
 
   if (!step1Data || !step2Data) {
@@ -106,7 +302,63 @@ export default function OnboardingStep3() {
           <CardTitle>Confirmação de dados</CardTitle>
           <CardDescription>Verifique se todos os dados estão corretos antes de finalizar</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">{/* Conteúdo omitido para brevidade */}</CardContent>
+        <CardContent className="space-y-6">
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          {isSuccess && (
+            <Alert className="bg-green-50 text-green-800 border-green-200">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <AlertDescription>
+                Cadastro realizado com sucesso! Você será redirecionado para a página de login em instantes.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          <div className="rounded-lg border p-4 space-y-4">
+            <div>
+              <h3 className="font-medium text-sm text-muted-foreground">Dados pessoais</h3>
+              <div className="mt-1">
+                <p>
+                  <span className="font-medium">Nome:</span> {step1Data.fullName}
+                </p>
+                <p>
+                  <span className="font-medium">CNPJ:</span> {step1Data.cnpj}
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="font-medium text-sm text-muted-foreground">Dados de acesso</h3>
+              <div className="mt-1">
+                <p>
+                  <span className="font-medium">E-mail:</span> {step2Data.email}
+                </p>
+                <p>
+                  <span className="font-medium">WhatsApp:</span> {step2Data.whatsapp}
+                </p>
+                <p>
+                  <span className="font-medium">Código de segurança:</span> {step2Data.securityCode}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3 p-4 rounded-lg bg-amber-50 border border-amber-200">
+            <AlertCircle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+            <div className="text-sm text-amber-800">
+              <p className="font-medium">Importante:</p>
+              <p className="mt-1">
+                Ao confirmar, você concorda com nossos Termos de Serviço e Política de Privacidade. Seus dados serão
+                usados apenas para fins de prestação de serviço.
+              </p>
+            </div>
+          </div>
+        </CardContent>
         <CardFooter className="flex justify-between">
           <Button variant="outline" onClick={handleBack} disabled={isLoading || isSuccess}>
             Voltar

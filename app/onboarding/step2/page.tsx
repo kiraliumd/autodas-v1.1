@@ -29,6 +29,7 @@ export default function OnboardingStep2() {
     const step1Data = localStorage.getItem("onboarding_step1")
     if (!step1Data) {
       router.push("/onboarding/step1")
+      return
     }
 
     // Carregar rascunho salvo, se existir
@@ -120,7 +121,16 @@ export default function OnboardingStep2() {
       )
     }
 
-    router.push("/onboarding/step1")
+    // Verificar se temos o sessionId no localStorage para garantir que voltamos para o step1 com o ID da sessão
+    const sessionId = localStorage.getItem("stripe_session_id")
+
+    if (sessionId) {
+      // Usar replace para evitar problemas de navegação
+      router.replace(`/onboarding/step1?session_id=${sessionId}`)
+    } else {
+      // Se não tiver sessionId, ainda assim voltar para step1
+      router.replace("/onboarding/step1")
+    }
   }
 
   return (
