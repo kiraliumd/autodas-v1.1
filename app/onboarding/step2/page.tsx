@@ -95,6 +95,27 @@ export default function OnboardingStep2() {
     }
   }
 
+  // Função específica para lidar com o botão voltar
+  const handleBack = (e: React.MouseEvent) => {
+    e.preventDefault()
+
+    // Preservar os dados do formulário no localStorage antes de voltar
+    if (formData.email.trim() || formData.password.trim() || formData.whatsapp.trim() || formData.securityCode.trim()) {
+      localStorage.setItem(
+        "onboarding_step2_draft",
+        JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          whatsapp: formData.whatsapp,
+          securityCode: formData.securityCode,
+        }),
+      )
+    }
+
+    // Redirecionar para o step1
+    router.push("/onboarding/step1")
+  }
+
   return (
     <OnboardingLayout currentStep={2} totalSteps={3}>
       <Card className="border-none shadow-lg">
@@ -169,7 +190,7 @@ export default function OnboardingStep2() {
           </form>
         </CardContent>
         <CardFooter className="flex justify-between">
-          <Button variant="outline" onClick={() => router.push("/onboarding/step1")}>
+          <Button variant="outline" onClick={handleBack}>
             Voltar
           </Button>
           <Button type="submit" form="step2-form" disabled={isLoading}>
